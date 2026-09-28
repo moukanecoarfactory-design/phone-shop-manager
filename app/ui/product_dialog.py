@@ -5,7 +5,7 @@ from pathlib import Path
 from PySide6.QtWidgets import (
     QDialog, QFormLayout, QLineEdit, QComboBox, QDoubleSpinBox,
     QSpinBox, QVBoxLayout, QHBoxLayout, QPushButton,
-    QLabel, QFileDialog, QMessageBox, QFrame,
+    QLabel, QFileDialog, QMessageBox, QFrame, QWidget,
     QGraphicsDropShadowEffect
 )
 from PySide6.QtCore import Qt

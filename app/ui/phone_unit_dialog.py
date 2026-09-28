@@ -1,7 +1,7 @@
 from PySide6.QtWidgets import (
     QDialog, QFormLayout, QLineEdit, QComboBox, QDoubleSpinBox,
     QVBoxLayout, QHBoxLayout, QPushButton, QLabel, QMessageBox,
-    QFrame, QGraphicsDropShadowEffect
+    QFrame, QWidget, QGraphicsDropShadowEffect
 )
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QColor
