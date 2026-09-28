@@ -2,6 +2,8 @@
 
 A modern, professional desktop application for managing a phone shop.
 
+![Login Screen](screenshots/01_login.png)
+
 ## ✨ Features
 
 - 🔐 **Secure Login** with role-based access (Admin / Cashier)
@@ -14,6 +16,23 @@ A modern, professional desktop application for managing a phone shop.
 - 🌍 **Multi-language** (English / Français / العربية)
 - 💰 **Multi-currency** (MAD / DH / درهم)
 - 💾 **Database Backup** system
+
+## 📸 Screenshots
+
+### 🏠 Dashboard
+![Dashboard](screenshots/02_dashboard.png)
+
+### 📦 Products Management
+![Products](screenshots/03_products.png)
+
+### 💰 Sales System
+![New Sale](screenshots/04_new_sale.png)
+
+### 📊 Reports
+![Reports](screenshots/05_reports.png)
+
+### ⚙️ Settings
+![Settings](screenshots/06_settings.png)
 
 ## 🛠️ Tech Stack
 
