@@ -1,0 +1,34 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+.venv/
+
+# PyInstaller
+build/
+dist/
+*.spec
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Private data (DO NOT push)
+data/shop.db
+data/backups/
+data/images/
+data/assets/
+!data/assets/.gitkeep
+
+# But keep the folder structure
+!data/.gitkeep
