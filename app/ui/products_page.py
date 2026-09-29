@@ -111,9 +111,9 @@ class ProductsPage(QWidget):
         table_layout.setContentsMargins(0, 0, 0, 0)
 
         self.table = QTableWidget()
-        self.table.setColumnCount(9)
+        self.table.setColumnCount(10)
         self.table.setHorizontalHeaderLabels([
-            L("image"), L("id"), L("name"), L("category"), L("brand"),
+            L("image"), L("id"), L("name"), L("category"), L("brand"), "Capacity",
             L("buy_price"), L("sell_price"), L("qty"), L("profit")
         ])
         self.table.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows)
@@ -155,7 +155,7 @@ class ProductsPage(QWidget):
         hh.setSectionResizeMode(0, QHeaderView.ResizeMode.Fixed)
         self.table.setColumnWidth(0, 66)
         hh.setSectionResizeMode(2, QHeaderView.ResizeMode.Stretch)
-        for col in [1, 3, 4, 5, 6, 7, 8]:
+        for col in [1, 3, 4, 5, 6, 7, 8, 9]:
             hh.setSectionResizeMode(col, QHeaderView.ResizeMode.ResizeToContents)
         self.table.verticalHeader().setDefaultSectionSize(THUMB_SIZE + 18)
 
@@ -316,19 +316,24 @@ class ProductsPage(QWidget):
             self.table.setItem(row, 2, QTableWidgetItem(p.name))
             self.table.setItem(row, 3, QTableWidgetItem(cat_name))
             self.table.setItem(row, 4, QTableWidgetItem(p.brand))
-            self.table.setItem(row, 5, QTableWidgetItem(f"{p.buying_price:.2f}"))
-            self.table.setItem(row, 6, QTableWidgetItem(f"{p.selling_price:.2f}"))
+            capacity_item = QTableWidgetItem(p.capacity or "")
+            capacity_item.setTextAlignment(Qt.AlignmentFlag.AlignCenter)
+            capacity_item.setForeground(QColor("#7c3aed"))
+            self.table.setItem(row, 5, capacity_item)
+
+            self.table.setItem(row, 6, QTableWidgetItem(f"{p.buying_price:.2f}"))
+            self.table.setItem(row, 7, QTableWidgetItem(f"{p.selling_price:.2f}"))
 
             qty_item = QTableWidgetItem(str(p.quantity))
             qty_item.setTextAlignment(Qt.AlignmentFlag.AlignCenter)
-            self.table.setItem(row, 7, qty_item)
+            self.table.setItem(row, 8, qty_item)
 
             profit_item = QTableWidgetItem(f"{p.profit:.2f}")
             profit_item.setForeground(QColor("#16a34a"))
-            self.table.setItem(row, 8, profit_item)
+            self.table.setItem(row, 9, profit_item)
 
             if p.is_low_stock:
-                for col in range(1, 9):
+                for col in range(1, 10):
                     item = self.table.item(row, col)
                     if item:
                         item.setBackground(QColor("#fef2f2"))

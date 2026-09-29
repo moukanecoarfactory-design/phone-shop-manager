@@ -8,6 +8,7 @@ class Product:
     name: str = ""
     category_id: Optional[int] = None
     brand: str = ""
+    capacity: str = ""
     buying_price: float = 0.0
     selling_price: float = 0.0
     quantity: int = 0
@@ -48,8 +49,8 @@ class Customer:
     phone: str = ""
     address: str = ""
     notes: str = ""
-    
-    
+
+
 @dataclass
 class Supplier:
     id: Optional[int] = None
@@ -57,7 +58,7 @@ class Supplier:
     phone: str = ""
     address: str = ""
     notes: str = ""
-    
+
 
 @dataclass
 class PhoneUnit:
@@ -66,7 +67,7 @@ class PhoneUnit:
     imei: str = ""
     buying_price: float = 0.0
     selling_price: float = 0.0
-    status: str = "in_stock"   # in_stock | sold | returned
+    status: str = "in_stock"
     supplier_id: Optional[int] = None
     notes: str = ""
 

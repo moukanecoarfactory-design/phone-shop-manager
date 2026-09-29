@@ -216,7 +216,10 @@ class NewSaleWindow(QDialog):
         self.product_list.setRowCount(len(products))
 
         for row, p in enumerate(products):
-            name_item = QTableWidgetItem(p.name)
+            display_name = p.name
+            if p.capacity:
+                display_name += f" [{p.capacity}]"
+            name_item = QTableWidgetItem(display_name)
             name_item.setData(Qt.ItemDataRole.UserRole, p)
             price_item = QTableWidgetItem(f"{p.selling_price:.2f}")
             stock_item = QTableWidgetItem(str(p.quantity))
@@ -233,7 +236,6 @@ class NewSaleWindow(QDialog):
             self.product_list.setItem(row, 0, name_item)
             self.product_list.setItem(row, 1, price_item)
             self.product_list.setItem(row, 2, stock_item)
-
     def on_add_product_to_cart(self):
         L = lambda key: t(key, self.lang)
         rows = self.product_list.selectionModel().selectedRows()
@@ -260,10 +262,17 @@ class NewSaleWindow(QDialog):
                 self.refresh_cart()
                 return
 
+        # Build display name with brand + capacity
+        display_name = product.name
+        if product.brand:
+            display_name += f" ({product.brand})"
+        if product.capacity:
+            display_name += f" [{product.capacity}]"
+
         self.cart.append({
             "product_id": product.id,
             "phone_unit_id": None,
-            "name": product.name + (f" ({product.brand})" if product.brand else ""),
+            "name": display_name,
             "quantity": 1,
             "unit_price": product.selling_price,
             "unit_cost": product.buying_price,

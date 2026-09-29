@@ -69,12 +69,12 @@ def add_product(p: Product) -> int:
     conn = get_connection()
     cur = conn.execute("""
         INSERT INTO products
-        (name, category_id, brand, buying_price, selling_price,
+        (name, category_id, brand, capacity, buying_price, selling_price,
          quantity, low_stock_alert, supplier_id, barcode, notes, image_path)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-    """, (p.name, p.category_id, p.brand, p.buying_price, p.selling_price,
-          p.quantity, p.low_stock_alert, p.supplier_id, p.barcode, p.notes,
-          p.image_path))
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    """, (p.name, p.category_id, p.brand, p.capacity, p.buying_price,
+          p.selling_price, p.quantity, p.low_stock_alert, p.supplier_id,
+          p.barcode, p.notes, p.image_path))
     conn.commit()
     new_id = cur.lastrowid
     conn.close()
@@ -85,14 +85,14 @@ def update_product(p: Product) -> None:
     conn = get_connection()
     conn.execute("""
         UPDATE products SET
-            name = ?, category_id = ?, brand = ?,
+            name = ?, category_id = ?, brand = ?, capacity = ?,
             buying_price = ?, selling_price = ?, quantity = ?,
             low_stock_alert = ?, supplier_id = ?, barcode = ?, notes = ?,
             image_path = ?
         WHERE id = ?
-    """, (p.name, p.category_id, p.brand, p.buying_price, p.selling_price,
-          p.quantity, p.low_stock_alert, p.supplier_id, p.barcode, p.notes,
-          p.image_path, p.id))
+    """, (p.name, p.category_id, p.brand, p.capacity, p.buying_price,
+          p.selling_price, p.quantity, p.low_stock_alert, p.supplier_id,
+          p.barcode, p.notes, p.image_path, p.id))
     conn.commit()
     conn.close()
 
@@ -107,7 +107,8 @@ def delete_product(product_id: int) -> None:
 def _row_to_product(r) -> Product:
     return Product(
         id=r["id"], name=r["name"], category_id=r["category_id"],
-        brand=r["brand"] or "", buying_price=r["buying_price"],
+        brand=r["brand"] or "", capacity=r["capacity"] or "",
+        buying_price=r["buying_price"],
         selling_price=r["selling_price"], quantity=r["quantity"],
         low_stock_alert=r["low_stock_alert"], supplier_id=r["supplier_id"],
         barcode=r["barcode"] or "", notes=r["notes"] or "",

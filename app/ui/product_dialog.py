@@ -157,6 +157,12 @@ class ProductDialog(QDialog):
         self.brand_input = QLineEdit()
         self.brand_input.setMinimumHeight(40)
         self.brand_input.setStyleSheet(self._input_style())
+
+        self.capacity_input = QLineEdit()
+        self.capacity_input.setPlaceholderText("e.g. 64GB, 20000mAh")
+        self.capacity_input.setMinimumHeight(40)
+        self.capacity_input.setStyleSheet(self._input_style())
+        form.addRow(self._label("Capacity"), self.capacity_input)
         form.addRow(self._label(L("brand")), self.brand_input)
 
         # --- Price row (side by side) ---
@@ -353,6 +359,7 @@ class ProductDialog(QDialog):
             if idx >= 0:
                 self.category_combo.setCurrentIndex(idx)
         self.brand_input.setText(p.brand)
+        self.capacity_input.setText(p.capacity)
         self.buying_input.setValue(p.buying_price)
         self.selling_input.setValue(p.selling_price)
         self.qty_input.setValue(p.quantity)
@@ -420,6 +427,7 @@ class ProductDialog(QDialog):
             name=self.name_input.text().strip(),
             category_id=self.category_combo.currentData(),
             brand=self.brand_input.text().strip(),
+            capacity=self.capacity_input.text().strip(),
             buying_price=self.buying_input.value(),
             selling_price=self.selling_input.value(),
             quantity=self.qty_input.value(),
