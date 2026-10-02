@@ -2,7 +2,7 @@
     QDialog, QVBoxLayout, QHBoxLayout, QLabel, QComboBox,
     QPushButton, QTableWidget, QTableWidgetItem, QLineEdit,
     QHeaderView, QAbstractItemView, QMessageBox, QFrame,
-    QTabWidget, QWidget, QDoubleSpinBox
+    QTabWidget, QWidget
 )
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QColor
@@ -11,7 +11,6 @@ from app.db.customer_repo import get_customers
 from app.db.product_repo import get_products
 from app.db.phone_unit_repo import get_phone_units
 from app.db.sale_repo import create_sale
-from app.db.payment_repo import add_payment
 from app.locales.translations import t, currency
 from app.ui.receipt_dialog import ReceiptDialog
 
@@ -25,7 +24,7 @@ class NewSaleWindow(QDialog):
         L = lambda key: t(key, self.lang)
 
         self.setWindowTitle(L("new_sale"))
-        self.resize(1100, 720)
+        self.resize(1050, 680)
 
         self.cart = []
 
@@ -40,14 +39,13 @@ class NewSaleWindow(QDialog):
         self.customer_combo.addItem(L("walk_in"), None)
         for c in get_customers(limit=10000):
             self.customer_combo.addItem(f"{c.name} ({c.phone})", c.id)
-        self.customer_combo.currentIndexChanged.connect(self.on_customer_changed)
         top.addWidget(self.customer_combo, 1)
         layout.addLayout(top)
 
-        # ---------- Middle: tabs + cart ----------
+        # ---------- Middle ----------
         mid = QHBoxLayout()
 
-        # LEFT panel
+        # LEFT panel with tabs
         left_panel = QFrame()
         left_panel.setStyleSheet("QFrame { background: #f8fafc; border-radius: 8px; }")
         left_layout = QVBoxLayout(left_panel)
@@ -107,9 +105,10 @@ class NewSaleWindow(QDialog):
         self.tabs.addTab(phones_tab, L("phones_tab"))
 
         left_layout.addWidget(self.tabs)
+
         mid.addWidget(left_panel, 1)
 
-        # RIGHT panel (cart)
+        # RIGHT: cart
         right_panel = QFrame()
         right_panel.setStyleSheet("QFrame { background: #f8fafc; border-radius: 8px; }")
         right_layout = QVBoxLayout(right_panel)
@@ -131,108 +130,47 @@ class NewSaleWindow(QDialog):
         remove_row.addStretch()
         right_layout.addLayout(remove_row)
 
-        # ---------- Totals panel ----------
+        # Totals
         totals_frame = QFrame()
         totals_frame.setStyleSheet("""
             QFrame {
                 background: #1e293b;
                 border-radius: 8px;
-                padding: 10px;
+                padding: 8px;
             }
-            QLabel { color: white; font-size: 13px; }
+            QLabel { color: white; font-size: 14px; }
         """)
         totals_layout = QVBoxLayout(totals_frame)
-        totals_layout.setSpacing(6)
-
-        self.total_label = QLabel("Total: 0.00 MAD")
-        self.total_label.setStyleSheet("font-size: 18px; font-weight: bold; color: white;")
+        self.total_label = QLabel(L("total_label").replace("{total}", "0.00"))
+        self.total_label.setStyleSheet("font-size: 18px; font-weight: bold;")
         totals_layout.addWidget(self.total_label)
-
-        self.profit_label = QLabel("Profit: 0.00 MAD")
-        self.profit_label.setStyleSheet("font-size: 13px; color: #86efac;")
+        self.profit_label = QLabel(L("profit_label").replace("{profit}", "0.00"))
+        self.profit_label.setStyleSheet("font-size: 14px; color: #86efac;")
         totals_layout.addWidget(self.profit_label)
-
         right_layout.addWidget(totals_frame)
 
-        # ---------- Payment section ----------
-        pay_frame = QFrame()
-        pay_frame.setStyleSheet("""
-            QFrame {
-                background-color: #fef3c7;
-                border: 1px solid #fcd34d;
-                border-radius: 8px;
-                padding: 10px;
-            }
-            QLabel { color: #78350f; font-size: 13px; font-weight: bold; }
-        """)
-        pay_layout = QVBoxLayout(pay_frame)
-        pay_layout.setSpacing(6)
-
-        pay_row = QHBoxLayout()
-        pay_lbl = QLabel(L("paid_at_checkout") + ":")
-        pay_row.addWidget(pay_lbl)
-
-        self.paid_input = QDoubleSpinBox()
-        self.paid_input.setMaximum(9999999)
-        self.paid_input.setDecimals(2)
-        self.paid_input.setSuffix(" " + currency(self.lang))
-        self.paid_input.setMinimumHeight(36)
-        self.paid_input.setStyleSheet("""
-            QDoubleSpinBox {
-                background-color: white;
-                color: #0f172a;
-                border: 1px solid #fcd34d;
-                border-radius: 6px;
-                padding: 4px 10px;
-                font-size: 14px;
-                font-weight: bold;
-            }
-            QDoubleSpinBox:focus { border: 2px solid #f59e0b; }
-        """)
-        self.paid_input.valueChanged.connect(self.on_paid_changed)
-        pay_row.addWidget(self.paid_input, 1)
-
-        pay_layout.addLayout(pay_row)
-
-        # Debt indicator
-        self.debt_label = QLabel("")
-        self.debt_label.setStyleSheet("""
-            color: #b45309;
-            font-size: 12px;
-            font-weight: bold;
-            background: transparent;
-        """)
-        self.debt_label.setWordWrap(True)
-        pay_layout.addWidget(self.debt_label)
-
-        right_layout.addWidget(pay_frame)
-
         mid.addWidget(right_panel, 1)
+
         layout.addLayout(mid, 1)
 
-        # ---------- Bottom buttons ----------
+        # ---------- Bottom ----------
         bottom = QHBoxLayout()
         bottom.addStretch()
 
         cancel_btn = QPushButton(L("cancel"))
-        cancel_btn.setMinimumHeight(42)
         cancel_btn.clicked.connect(self.reject)
         bottom.addWidget(cancel_btn)
 
         self.complete_btn = QPushButton(L("complete_sale"))
-        self.complete_btn.setMinimumHeight(42)
         self.complete_btn.setStyleSheet(self._btn_style("#16a34a"))
         self.complete_btn.clicked.connect(self.on_complete_sale)
         bottom.addWidget(self.complete_btn)
 
         layout.addLayout(bottom)
 
-        # Init
         self.refresh_product_list()
         self.refresh_phone_list()
         self.refresh_cart()
-
-    # ---------- Styles ----------
 
     def _btn_style(self, color: str) -> str:
         return f"""
@@ -299,7 +237,6 @@ class NewSaleWindow(QDialog):
             self.product_list.setItem(row, 0, name_item)
             self.product_list.setItem(row, 1, price_item)
             self.product_list.setItem(row, 2, stock_item)
-
     def on_add_product_to_cart(self):
         L = lambda key: t(key, self.lang)
         rows = self.product_list.selectionModel().selectedRows()
@@ -326,6 +263,7 @@ class NewSaleWindow(QDialog):
                 self.refresh_cart()
                 return
 
+        # Build display name with brand + capacity
         display_name = product.name
         if product.brand:
             display_name += f" ({product.brand})"
@@ -358,14 +296,14 @@ class NewSaleWindow(QDialog):
 
         self.phone_list.setRowCount(len(units))
         for row, u in enumerate(units):
-            product_label = "—"
+            product_label = "-"
             if u.product_id and u.product_id in all_products:
                 p = all_products[u.product_id]
                 product_label = p.name + (f" ({p.brand})" if p.brand else "")
 
             name_item = QTableWidgetItem(product_label)
             name_item.setData(Qt.ItemDataRole.UserRole, u)
-            imei_item = QTableWidgetItem(u.imei or "—")
+            imei_item = QTableWidgetItem(u.imei or "-")
             buy_item = QTableWidgetItem(f"{u.buying_price:.2f}")
             sell_item = QTableWidgetItem(f"{u.selling_price:.2f}")
 
@@ -413,7 +351,6 @@ class NewSaleWindow(QDialog):
 
     def refresh_cart(self):
         L = lambda key: t(key, self.lang)
-        C = currency(self.lang)
         self.cart_table.setRowCount(len(self.cart))
         total = 0.0
         profit = 0.0
@@ -437,61 +374,6 @@ class NewSaleWindow(QDialog):
             L("profit_label").replace("{profit}", f"{profit:.2f}")
         )
 
-        # Auto-update Paid to match total if user hasn't touched it
-        if self.paid_input.value() == 0 or self._paid_matches_last_total:
-            self.paid_input.blockSignals(True)
-            self.paid_input.setValue(total)
-            self.paid_input.blockSignals(False)
-            self._paid_matches_last_total = True
-
-        self.on_paid_changed()
-
-    _paid_matches_last_total = True
-
-    def on_paid_changed(self):
-        L = lambda key: t(key, self.lang)
-        C = currency(self.lang)
-
-        # Get total from cart
-        total = sum(it["unit_price"] * it["quantity"] for it in self.cart)
-        paid = self.paid_input.value()
-        debt = total - paid
-
-        if debt > 0.01:
-            self.debt_label.setText(
-                L("customer_debt_created").replace("{amount}", f"{debt:.2f} {C}")
-            )
-            self.debt_label.setStyleSheet("""
-                color: #b45309;
-                font-size: 12px;
-                font-weight: bold;
-                background: transparent;
-            """)
-        else:
-            self.debt_label.setText("")
-            self.debt_label.setStyleSheet("background: transparent;")
-
-        # Track whether user modified Paid
-        if abs(paid - total) > 0.01:
-            self._paid_matches_last_total = False
-        else:
-            self._paid_matches_last_total = True
-
-    def on_customer_changed(self):
-        """If walk-in customer is selected, disable debt."""
-        customer_id = self.customer_combo.currentData()
-        L = lambda key: t(key, self.lang)
-
-        if customer_id is None:
-            # Walk-in — must pay full
-            total = sum(it["unit_price"] * it["quantity"] for it in self.cart)
-            self.paid_input.setValue(total)
-            self.paid_input.setEnabled(False)
-        else:
-            self.paid_input.setEnabled(True)
-            total = sum(it["unit_price"] * it["quantity"] for it in self.cart)
-            self.paid_input.setValue(total)
-
     def on_remove_from_cart(self):
         rows = self.cart_table.selectionModel().selectedRows()
         if not rows:
@@ -507,8 +389,6 @@ class NewSaleWindow(QDialog):
 
     def on_complete_sale(self):
         L = lambda key: t(key, self.lang)
-        C = currency(self.lang)
-
         if not self.cart:
             QMessageBox.warning(self, L("empty_cart"), L("empty_cart_msg"))
             return
@@ -518,37 +398,14 @@ class NewSaleWindow(QDialog):
         if customer_id:
             customer_name = self.customer_combo.currentText().split(" (")[0]
 
-        # Calculate totals
-        total = sum(it["unit_price"] * it["quantity"] for it in self.cart)
-        paid = self.paid_input.value()
-
-        # Walk-in must pay full
-        if customer_id is None and paid < total - 0.01:
-            QMessageBox.warning(self, L("error_title"),
-                                L("walk_in_no_debt"))
-            return
-
-        # Save sale
         try:
             sale_id = create_sale(customer_id, self.cart)
         except Exception as e:
-            QMessageBox.critical(self, L("error_title"),
+            QMessageBox.critical(self, "Error",
                                  f"{L('could_not_save')}\n{e}")
             return
 
-        # Record payment
-        if paid > 0:
-            try:
-                add_payment(
-                    customer_id=customer_id,
-                    amount=paid,
-                    sale_id=sale_id,
-                    notes=f"Payment for sale #{sale_id}"
-                )
-            except Exception as e:
-                print(f"Payment error: {e}")
-
-        # Build receipt items
+        # Build items list for receipt
         receipt_items = []
         for it in self.cart:
             receipt_items.append({
@@ -558,18 +415,24 @@ class NewSaleWindow(QDialog):
                 "subtotal": it["unit_price"] * it["quantity"],
             })
 
-        # Show success message
+        # Calculate total
+        total = sum(it["unit_price"] * it["quantity"] for it in self.cart)
+
+        # Show success message first
         QMessageBox.information(self, L("sale_completed"),
                                 L("sale_completed_msg").replace("{id}", str(sale_id)))
 
-        # Show receipt
+        # Get current user info
+        from app.db.user_repo import get_all_users
+        cashier = "admin"
+
+        # Open receipt dialog
         from datetime import datetime
-        change = max(0.0, paid - total)
         sale_data = {
             "id": sale_id,
             "sale_date": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
             "total": total,
-            "paid": paid,
+            "paid": total,
         }
 
         try:
@@ -578,13 +441,14 @@ class NewSaleWindow(QDialog):
                 sale=sale_data,
                 items=receipt_items,
                 customer_name=customer_name,
-                cashier_name="admin",
+                cashier_name=cashier,
                 lang=self.lang,
-                currency_symbol=C,
-                change=change,
+                currency_symbol=currency(self.lang),
+                change=0.0,
             )
             receipt.exec()
         except Exception as e:
             print(f"Receipt error: {e}")
 
         self.accept()
+

@@ -6,9 +6,10 @@ from PySide6.QtWidgets import (
     QPushButton, QFrame, QMessageBox
 )
 from PySide6.QtCore import Qt
-from PySide6.QtGui import QPixmap, QColor, QPainter, QPainterPath
+from PySide6.QtGui import QPixmap, QPainter, QPainterPath
 
 from app.db.user_repo import authenticate
+from app.locales.translations import t, get_setting
 
 
 def _get_avatar_path() -> Path:
@@ -34,7 +35,12 @@ class LoginWindow(QDialog):
         self.lang = lang
         self.user = None
 
-        self.setWindowTitle("Phone Shop Manager — Login")
+        L = lambda key: t(key, self.lang)
+
+        # Read shop name from settings
+        shop_name = get_setting("shop_name", "Phone Shop")
+
+        self.setWindowTitle(L("welcome_back") + " - " + shop_name)
         self.setFixedSize(500, 720)
 
         # Dark gradient background
@@ -60,7 +66,6 @@ class LoginWindow(QDialog):
         avatar_container.addStretch()
 
         if avatar_path:
-            # Circular avatar with glow border
             pix = QPixmap(str(avatar_path))
             size = 140
 
@@ -69,7 +74,6 @@ class LoginWindow(QDialog):
                                  Qt.AspectRatioMode.KeepAspectRatioByExpanding,
                                  Qt.TransformationMode.SmoothTransformation)
 
-                # Crop to circle
                 rounded = QPixmap(size, size)
                 rounded.fill(Qt.GlobalColor.transparent)
                 painter = QPainter(rounded)
@@ -77,7 +81,6 @@ class LoginWindow(QDialog):
                 path = QPainterPath()
                 path.addEllipse(0, 0, size, size)
                 painter.setClipPath(path)
-                # Center the pixmap
                 offset_x = (pix.width() - size) // 2
                 offset_y = (pix.height() - size) // 2
                 painter.drawPixmap(-offset_x, -offset_y, pix)
@@ -95,7 +98,6 @@ class LoginWindow(QDialog):
                 """)
                 avatar_container.addWidget(avatar_lbl)
             else:
-                # Fallback emoji
                 avatar_lbl = QLabel("📱")
                 avatar_lbl.setFixedSize(140, 140)
                 avatar_lbl.setAlignment(Qt.AlignmentFlag.AlignCenter)
@@ -123,19 +125,21 @@ class LoginWindow(QDialog):
 
         outer.addSpacing(24)
 
-        # ---------- Title ----------
-        title = QLabel("MED PHONE SHOP")
+        # ---------- Shop name (from settings) ----------
+        title = QLabel(shop_name.upper())
         title.setAlignment(Qt.AlignmentFlag.AlignCenter)
         title.setStyleSheet("""
             color: #ffffff;
-            font-size: 22px;
+            font-size: 20px;
             font-weight: bold;
             letter-spacing: 2px;
             background: transparent;
         """)
+        title.setWordWrap(True)
         outer.addWidget(title)
 
-        subtitle = QLabel("Sign in to continue")
+        # ---------- Subtitle (translated) ----------
+        subtitle = QLabel(L("sign_in_to_continue"))
         subtitle.setAlignment(Qt.AlignmentFlag.AlignCenter)
         subtitle.setStyleSheet("""
             color: #94a3b8;
@@ -148,7 +152,7 @@ class LoginWindow(QDialog):
         outer.addSpacing(40)
 
         # ---------- Username ----------
-        user_lbl = QLabel("USERNAME")
+        user_lbl = QLabel(L("username_label"))
         user_lbl.setStyleSheet("""
             color: #94a3b8;
             font-size: 11px;
@@ -161,7 +165,7 @@ class LoginWindow(QDialog):
         outer.addSpacing(6)
 
         self.username_input = QLineEdit()
-        self.username_input.setPlaceholderText("Enter your username")
+        self.username_input.setPlaceholderText(L("enter_username"))
         self.username_input.setMinimumHeight(48)
         self.username_input.setStyleSheet(self._input_style())
         outer.addWidget(self.username_input)
@@ -169,7 +173,7 @@ class LoginWindow(QDialog):
         outer.addSpacing(18)
 
         # ---------- Password ----------
-        pass_lbl = QLabel("PASSWORD")
+        pass_lbl = QLabel(L("password_label"))
         pass_lbl.setStyleSheet("""
             color: #94a3b8;
             font-size: 11px;
@@ -182,7 +186,7 @@ class LoginWindow(QDialog):
         outer.addSpacing(6)
 
         self.password_input = QLineEdit()
-        self.password_input.setPlaceholderText("Enter your password")
+        self.password_input.setPlaceholderText(L("enter_password"))
         self.password_input.setEchoMode(QLineEdit.EchoMode.Password)
         self.password_input.setMinimumHeight(48)
         self.password_input.setStyleSheet(self._input_style())
@@ -192,7 +196,7 @@ class LoginWindow(QDialog):
         outer.addSpacing(30)
 
         # ---------- Login button ----------
-        self.login_btn = QPushButton("  Sign In  →")
+        self.login_btn = QPushButton("  " + L("sign_in") + "  →")
         self.login_btn.setMinimumHeight(50)
         self.login_btn.setCursor(Qt.CursorShape.PointingHandCursor)
         self.login_btn.setStyleSheet("""
@@ -251,12 +255,13 @@ class LoginWindow(QDialog):
         """
 
     def on_login(self):
+        L = lambda key: t(key, self.lang)
         username = self.username_input.text().strip()
         password = self.password_input.text()
 
         if not username or not password:
-            QMessageBox.warning(self, "Missing Fields",
-                                "Please enter username and password.")
+            QMessageBox.warning(self, L("missing_fields"),
+                                L("please_enter_credentials"))
             return
 
         user = authenticate(username, password)
@@ -264,7 +269,7 @@ class LoginWindow(QDialog):
             self.user = user
             self.accept()
         else:
-            QMessageBox.warning(self, "Login Failed",
-                                "Invalid username or password.")
+            QMessageBox.warning(self, L("login_failed"),
+                                L("invalid_credentials"))
             self.password_input.clear()
             self.password_input.setFocus()

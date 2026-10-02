@@ -216,16 +216,16 @@ class UserDialog(QDialog):
         confirm = self.confirm_input.text()
 
         if not username or not password:
-            QMessageBox.warning(self, L("missing_fields"),
-                                L("fill_all_fields"))
+            QMessageBox.warning(self, "Missing Fields",
+                                "Username and password are required.")
             return
 
         if len(password) < 4:
-            QMessageBox.warning(self, L("too_short"), L("password_too_short"))
+            QMessageBox.warning(self, "Too Short", L("password_too_short"))
             return
 
         if password != confirm:
-            QMessageBox.warning(self, L("mismatch"), L("password_mismatch"))
+            QMessageBox.warning(self, "Mismatch", L("password_mismatch"))
             return
 
         conn = get_connection()
@@ -234,7 +234,7 @@ class UserDialog(QDialog):
         ).fetchone()
         conn.close()
         if row:
-            QMessageBox.warning(self, L("not_allowed"), L("username_taken"))
+            QMessageBox.warning(self, "Exists", L("username_taken"))
             return
 
         self.accept()
@@ -491,12 +491,12 @@ class UsersPage(QWidget):
         L = lambda key: t(key, self.lang)
         uid = self._selected_id()
         if uid is None:
-            QMessageBox.information(self, L("no_selection"),
-                                    L("please_select_user"))
+            QMessageBox.information(self, "No Selection",
+                                    "Please select a user first.")
             return
 
         if uid == self.current_user.get("id"):
-            QMessageBox.warning(self, L("not_allowed"), L("cannot_delete_self_users"))
+            QMessageBox.warning(self, "Not Allowed", L("cannot_delete_self"))
             return
 
         conn = get_connection()
@@ -509,8 +509,8 @@ class UsersPage(QWidget):
         conn.close()
 
         if target and target["role"] == "admin" and admins <= 1:
-            QMessageBox.warning(self, L("not_allowed"),
-                                L("cannot_delete_last_admin"))
+            QMessageBox.warning(self, "Not Allowed",
+                                "Cannot delete the last admin.")
             return
 
         username = target["username"] if target else "?"

@@ -12,10 +12,9 @@ from app.ui.phone_units_page import PhoneUnitsPage
 from app.ui.sales_page import SalesPage
 from app.ui.dashboard_page import DashboardPage
 from app.ui.reports_page import ReportsPage
-from app.ui.debts_report_page import DebtsReportPage
 from app.ui.settings_page import SettingsPage
-from app.ui.users_page import UsersPage
 from app.ui.change_password_dialog import ChangePasswordDialog
+from app.ui.users_page import UsersPage
 from app.locales.translations import t, get_current_language, get_setting
 
 
@@ -70,8 +69,6 @@ class MainWindow(QMainWindow):
         self.lang = get_current_language()
         shop_name = get_setting("shop_name", "My Phone Shop")
 
-        L = lambda key: t(key, self.lang)
-
         central = QWidget()
         self.setCentralWidget(central)
         main_layout = QHBoxLayout(central)
@@ -120,7 +117,7 @@ class MainWindow(QMainWindow):
         shop_label.setWordWrap(True)
         logo_layout.addWidget(shop_label)
 
-        role_label = QLabel(L("management_system"))
+        role_label = QLabel("Management System")
         role_label.setStyleSheet("""
             color: #e0f2fe;
             font-size: 10px;
@@ -131,24 +128,22 @@ class MainWindow(QMainWindow):
         sidebar_layout.addWidget(logo_frame)
 
         # ---------- Navigation ----------
-        # Each item: (icon, label, page_index, admin_only)
+        self.nav_buttons = []
+                # Each item: (icon, label, page_index, admin_only)
         all_pages = [
-            ("🏠", t("dashboard", self.lang),        0, False),
-            ("📦", t("products", self.lang),         1, False),
-            ("📱", t("phone_units", self.lang),      2, False),
-            ("👥", t("customers", self.lang),        3, False),
-            ("🏭", t("suppliers", self.lang),        4, True),
-            ("💰", t("sales", self.lang),            5, False),
-            ("📊", t("reports", self.lang),          6, True),
-            ("💵", t("customer_debts", self.lang),   7, True),   # NEW
-            ("⚙️", t("settings", self.lang),         8, True),
-            ("👤", t("users", self.lang),            9, True),
+            ("🏠", t("dashboard", self.lang),   0, False),
+            ("📦", t("products", self.lang),    1, False),
+            ("📱", t("phone_units", self.lang), 2, False),
+            ("👥", t("customers", self.lang),   3, False),
+            ("🏭", t("suppliers", self.lang),   4, True),    # admin only
+            ("💰", t("sales", self.lang),       5, False),
+            ("📊", t("reports", self.lang),     6, True),    # admin only
+            ("⚙️", t("settings", self.lang),    7, True),    # admin only
+            ("👤", t("users", self.lang),       8, True),    # admin only — new page
         ]
 
         pages = [(icon, label, idx) for icon, label, idx, admin_only in all_pages
                  if self.is_admin or not admin_only]
-
-        self.nav_buttons = []
 
         nav_container = QVBoxLayout()
         nav_container.setContentsMargins(8, 12, 8, 12)
@@ -199,7 +194,8 @@ class MainWindow(QMainWindow):
 
         user_layout.addSpacing(4)
 
-        change_pw_btn = QPushButton("🔐  " + L("change_password_title"))
+                # --- Change Password button ---
+        change_pw_btn = QPushButton("🔐  Change Password")
         change_pw_btn.setCursor(Qt.CursorShape.PointingHandCursor)
         change_pw_btn.setStyleSheet("""
             QPushButton {
@@ -220,7 +216,8 @@ class MainWindow(QMainWindow):
         change_pw_btn.clicked.connect(self.on_change_password)
         user_layout.addWidget(change_pw_btn)
 
-        logout_btn = QPushButton("🚪  " + L("logout"))
+        # --- Logout button ---
+        logout_btn = QPushButton("🚪  Logout")
         logout_btn.setCursor(Qt.CursorShape.PointingHandCursor)
         logout_btn.setStyleSheet("""
             QPushButton {
@@ -244,20 +241,18 @@ class MainWindow(QMainWindow):
         sidebar_layout.addWidget(user_frame)
 
         # ================= CONTENT =================
-        # IMPORTANT: pages must be added in the SAME ORDER as their indexes (0-9)
         self.stack = QStackedWidget()
         self.stack.setStyleSheet("background-color: #f1f5f9;")
 
-        self.stack.addWidget(DashboardPage(lang=self.lang))            # 0
-        self.stack.addWidget(ProductsPage(lang=self.lang, is_admin=self.is_admin))    # 1
-        self.stack.addWidget(PhoneUnitsPage(lang=self.lang, is_admin=self.is_admin))  # 2
-        self.stack.addWidget(CustomersPage(lang=self.lang, is_admin=self.is_admin))   # 3
-        self.stack.addWidget(SuppliersPage(lang=self.lang, is_admin=self.is_admin))   # 4
-        self.stack.addWidget(SalesPage(lang=self.lang, is_admin=self.is_admin))       # 5
-        self.stack.addWidget(ReportsPage(lang=self.lang))              # 6
-        self.stack.addWidget(DebtsReportPage(lang=self.lang))          # 7  ← NEW
-        self.stack.addWidget(SettingsPage(lang=self.lang))             # 8
-        self.stack.addWidget(UsersPage(lang=self.lang, current_user=self.user))       # 9
+        self.stack.addWidget(DashboardPage(lang=self.lang))
+        self.stack.addWidget(ProductsPage(lang=self.lang, is_admin=self.is_admin))
+        self.stack.addWidget(PhoneUnitsPage(lang=self.lang, is_admin=self.is_admin))
+        self.stack.addWidget(CustomersPage(lang=self.lang, is_admin=self.is_admin))
+        self.stack.addWidget(SuppliersPage(lang=self.lang, is_admin=self.is_admin))
+        self.stack.addWidget(SalesPage(lang=self.lang, is_admin=self.is_admin))
+        self.stack.addWidget(ReportsPage(lang=self.lang))
+        self.stack.addWidget(SettingsPage(lang=self.lang))
+        self.stack.addWidget(UsersPage(lang=self.lang, current_user=self.user))
 
         main_layout.addWidget(sidebar)
         main_layout.addWidget(self.stack, 1)
@@ -271,14 +266,13 @@ class MainWindow(QMainWindow):
             btn.setChecked(i == index)
 
     def on_change_password(self):
-        dlg = ChangePasswordDialog(self, user=self.user, lang=self.lang)
+        dlg = ChangePasswordDialog(self, user=self.user)
         dlg.exec()
 
     def on_logout(self):
-        L = lambda key: t(key, self.lang)
         confirm = QMessageBox.question(
-            self, L("logout"),
-            L("confirm_logout"),
+            self, "Logout",
+            "Are you sure you want to logout?",
             QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No
         )
         if confirm == QMessageBox.StandardButton.Yes:

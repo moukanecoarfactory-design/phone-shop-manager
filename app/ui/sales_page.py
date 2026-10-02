@@ -1,4 +1,4 @@
-from PySide6.QtWidgets import (
+﻿from PySide6.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QLabel, QLineEdit,
     QPushButton, QTableWidget, QTableWidgetItem,
     QMessageBox, QHeaderView, QAbstractItemView, QFrame
@@ -11,6 +11,7 @@ from app.db.sale_repo import (
 )
 from app.ui.new_sale_window import NewSaleWindow
 from app.locales.translations import t, currency
+from app.ui.receipt_dialog import ReceiptDialog
 
 
 PAGE_SIZE = 50
@@ -269,7 +270,7 @@ class SalesPage(QWidget):
             date_item = QTableWidgetItem(str(s["sale_date"]))
             self.table.setItem(row, 1, date_item)
 
-            self.table.setItem(row, 2, QTableWidgetItem(s["customer_name"] or "—"))
+            self.table.setItem(row, 2, QTableWidgetItem(s["customer_name"] or "-"))
 
             total_item = QTableWidgetItem(f"{s['total']:.2f}")
             total_item.setForeground(QColor("#0ea5e9"))
@@ -329,31 +330,41 @@ class SalesPage(QWidget):
             return
 
         sale = get_sale(sale_id)
-        items = get_sale_items(sale_id)
+        items_raw = get_sale_items(sale_id)
 
-        msg = f"{L('sale_number')} {sale['id']}\n"
-        msg += f"{L('date')}: {sale['sale_date']}\n"
-        msg += f"{L('customer')}: {sale['customer_name'] or '—'}\n\n"
-        msg += f"{L('item')}:\n"
-
-        for it in items:
+        receipt_items = []
+        for it in items_raw:
             if it["product_name"]:
                 name = it["product_name"]
                 if it["product_brand"]:
-                    name += f" ({it['product_brand']})"
+                    name += " (" + it["product_brand"] + ")"
                 qty = it["quantity"]
             elif it["phone_imei"]:
-                name = f"IMEI: {it['phone_imei']}"
+                name = "IMEI: " + it["phone_imei"]
                 qty = 1
             else:
                 name = "?"
                 qty = it["quantity"]
 
-            msg += f"  • {name} x{qty} @ {it['unit_price']:.2f} {C}\n"
+            receipt_items.append({
+                "name": name,
+                "qty": qty,
+                "price": it["unit_price"],
+                "subtotal": it["unit_price"] * qty,
+            })
 
-        msg += f"\n{L('total_label').replace('{total}', f'{sale[chr(116)+chr(111)+chr(116)+chr(97)+chr(108)]:.2f}')}"
-
-        QMessageBox.information(self, f"{L('sale_number')} {sale['id']}", msg)
+        receipt = ReceiptDialog(
+            self,
+            sale=sale,
+            items=receipt_items,
+            customer_name=sale.get("customer_name") or "",
+            cashier_name="admin",
+            lang=self.lang,
+            currency_symbol=C,
+            change=0.0,
+        )
+        receipt.exec()
+   
 
     def on_delete(self):
         if not self.is_admin:

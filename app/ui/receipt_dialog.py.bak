@@ -1,0 +1,292 @@
+"""
+Receipt dialog — shows a preview and lets you save/print the receipt.
+Uses QtWebEngine-free approach: opens PDF with the system default viewer.
+"""
+import os
+import subprocess
+import sys
+from datetime import datetime
+from pathlib import Path
+
+from PySide6.QtWidgets import (
+    QDialog, QVBoxLayout, QHBoxLayout, QLabel, QPushButton,
+    QFrame, QGraphicsDropShadowEffect, QMessageBox
+)
+from PySide6.QtCore import Qt
+from PySide6.QtGui import QColor
+
+from app.core.receipt import generate_receipt, save_receipt_pdf
+from app.locales.translations import t
+
+
+# Directory for saved receipts
+def _get_receipts_dir() -> Path:
+    if getattr(sys, "frozen", False):
+        base = Path(sys.executable).resolve().parent
+    else:
+        base = Path(__file__).resolve().parent.parent.parent
+    d = base / "data" / "receipts"
+    d.mkdir(parents=True, exist_ok=True)
+    return d
+
+
+class ReceiptDialog(QDialog):
+    """
+    Modern receipt dialog — generates the PDF and lets the user
+    open it, save it, or print it.
+    """
+
+    def __init__(self, parent=None, sale: dict = None,
+                 items: list = None, customer_name: str = "",
+                 cashier_name: str = "admin", lang: str = "en",
+                 currency_symbol: str = "MAD", change: float = 0.0):
+        super().__init__(parent)
+        self.lang = lang
+        self.sale = sale or {}
+        self.items = items or []
+        self.customer_name = customer_name
+        self.cashier_name = cashier_name
+        self.currency_symbol = currency_symbol
+        self.change = change
+
+        L = lambda key: t(key, self.lang)
+
+        self.setWindowTitle("Receipt")
+        self.setMinimumWidth(500)
+        self.setMinimumHeight(420)
+        self.setStyleSheet("QDialog { background-color: #f1f5f9; }")
+
+        outer = QVBoxLayout(self)
+        outer.setContentsMargins(24, 24, 24, 24)
+
+        # ---------- Card ----------
+        card = QFrame()
+        card.setStyleSheet("""
+            QFrame {
+                background-color: white;
+                border-radius: 14px;
+                border: 1px solid #e2e8f0;
+            }
+        """)
+        shadow = QGraphicsDropShadowEffect()
+        shadow.setBlurRadius(22)
+        shadow.setXOffset(0)
+        shadow.setYOffset(3)
+        shadow.setColor(QColor(0, 0, 0, 30))
+        card.setGraphicsEffect(shadow)
+
+        card_layout = QVBoxLayout(card)
+        card_layout.setContentsMargins(28, 24, 28, 24)
+        card_layout.setSpacing(14)
+
+        # Header
+        title_row = QHBoxLayout()
+        title_row.setSpacing(10)
+
+        icon_badge = QLabel("🧾")
+        icon_badge.setFixedSize(46, 46)
+        icon_badge.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        icon_badge.setStyleSheet("""
+            background-color: #eef2ff;
+            border-radius: 12px;
+            font-size: 24px;
+        """)
+        title_row.addWidget(icon_badge)
+
+        title_col = QVBoxLayout()
+        title_col.setSpacing(2)
+
+        title = QLabel("Sale Complete!")
+        title.setStyleSheet("""
+            color: #0f172a;
+            font-size: 20px;
+            font-weight: bold;
+            background: transparent;
+        """)
+        title_col.addWidget(title)
+
+        subtitle = QLabel(
+            f"Receipt #{self.sale.get('id', '-')} · "
+            f"{self.sale.get('sale_date', '')}"
+        )
+        subtitle.setStyleSheet("""
+            color: #64748b;
+            font-size: 12px;
+            background: transparent;
+        """)
+        title_col.addWidget(subtitle)
+
+        title_row.addLayout(title_col)
+        title_row.addStretch()
+        card_layout.addLayout(title_row)
+
+        # Divider
+        divider = QFrame()
+        divider.setFrameShape(QFrame.Shape.HLine)
+        divider.setFixedHeight(1)
+        divider.setStyleSheet("background-color: #e2e8f0; border: none;")
+        card_layout.addWidget(divider)
+
+        # Summary
+        total_row = QHBoxLayout()
+        total_lbl = QLabel("Total:")
+        total_lbl.setStyleSheet("""
+            color: #475569;
+            font-size: 14px;
+            font-weight: bold;
+            background: transparent;
+        """)
+        total_row.addWidget(total_lbl)
+
+        total_val = QLabel(f"{self.sale.get('total', 0):.2f} {self.currency_symbol}")
+        total_val.setStyleSheet("""
+            color: #16a34a;
+            font-size: 22px;
+            font-weight: bold;
+            background: transparent;
+        """)
+        total_row.addWidget(total_val)
+        total_row.addStretch()
+        card_layout.addLayout(total_row)
+
+        # Info about PDF
+        info = QLabel(
+            "💡 Click a button below to save or print the receipt PDF.\n"
+            "The receipt will open in your default PDF viewer."
+        )
+        info.setWordWrap(True)
+        info.setStyleSheet("""
+            color: #64748b;
+            font-size: 12px;
+            background-color: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            padding: 10px;
+        """)
+        card_layout.addWidget(info)
+
+        card_layout.addStretch()
+
+        # ---------- Buttons ----------
+        btn_row = QHBoxLayout()
+        btn_row.setSpacing(10)
+
+        # Close
+        close_btn = QPushButton("Close")
+        close_btn.setMinimumHeight(42)
+        close_btn.setCursor(Qt.CursorShape.PointingHandCursor)
+        close_btn.setStyleSheet(self._secondary_btn_style())
+        close_btn.clicked.connect(self.reject)
+        btn_row.addWidget(close_btn)
+
+        btn_row.addStretch()
+
+        # Save as PDF
+        save_btn = QPushButton("💾  Save PDF")
+        save_btn.setMinimumHeight(42)
+        save_btn.setCursor(Qt.CursorShape.PointingHandCursor)
+        save_btn.setStyleSheet(self._secondary_btn_style())
+        save_btn.clicked.connect(self.on_save_pdf)
+        btn_row.addWidget(save_btn)
+
+        # Open / Print
+        open_btn = QPushButton("🖨  Open Receipt")
+        open_btn.setMinimumHeight(42)
+        open_btn.setCursor(Qt.CursorShape.PointingHandCursor)
+        open_btn.setStyleSheet(self._primary_btn_style())
+        open_btn.clicked.connect(self.on_open_pdf)
+        btn_row.addWidget(open_btn)
+
+        card_layout.addLayout(btn_row)
+
+        outer.addWidget(card)
+
+        # ---------- Generate PDF now ----------
+        self.pdf_path: Path = self._build_pdf()
+        print(f"[Receipt] PDF generated at: {self.pdf_path}")
+
+    # ---------- Styles ----------
+
+    def _primary_btn_style(self) -> str:
+        return """
+            QPushButton {
+                background: qlineargradient(
+                    x1:0, y1:0, x2:1, y2:0,
+                    stop:0 #0ea5e9, stop:1 #6366f1
+                );
+                color: white;
+                border: none;
+                padding: 10px 22px;
+                border-radius: 8px;
+                font-weight: bold;
+                font-size: 13px;
+            }
+            QPushButton:hover {
+                background: qlineargradient(
+                    x1:0, y1:0, x2:1, y2:0,
+                    stop:0 #0284c7, stop:1 #4f46e5
+                );
+            }
+        """
+
+    def _secondary_btn_style(self) -> str:
+        return """
+            QPushButton {
+                background-color: #ffffff;
+                color: #475569;
+                border: 1px solid #e2e8f0;
+                padding: 8px 20px;
+                border-radius: 8px;
+                font-weight: bold;
+                font-size: 13px;
+            }
+            QPushButton:hover { background-color: #f8fafc; border: 1px solid #cbd5e1; }
+        """
+
+    # ---------- PDF creation ----------
+
+    def _build_pdf(self) -> Path:
+        """Generate the receipt PDF and return the path."""
+        pdf = generate_receipt(
+            sale=self.sale,
+            items=self.items,
+            customer_name=self.customer_name,
+            cashier_name=self.cashier_name,
+            lang=self.lang,
+            currency_symbol=self.currency_symbol,
+            change=self.change,
+        )
+
+        receipts_dir = _get_receipts_dir()
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        sale_id = self.sale.get("id", "unknown")
+        filename = f"receipt_{sale_id}_{timestamp}.pdf"
+
+        return save_receipt_pdf(pdf, receipts_dir / filename)
+
+    # ---------- Actions ----------
+
+    def on_save_pdf(self):
+        """Show a message with the saved PDF location."""
+        QMessageBox.information(
+            self, "Receipt Saved",
+            f"✅ Receipt saved as PDF:\n\n"
+            f"{self.pdf_path}\n\n"
+            f"Folder: {self.pdf_path.parent}"
+        )
+
+    def on_open_pdf(self):
+        """Open the PDF with the system default viewer."""
+        try:
+            if sys.platform == "win32":
+                os.startfile(str(self.pdf_path))
+            elif sys.platform == "darwin":
+                subprocess.Popen(["open", str(self.pdf_path)])
+            else:
+                subprocess.Popen(["xdg-open", str(self.pdf_path)])
+        except Exception as e:
+            QMessageBox.warning(
+                self, "Cannot Open PDF",
+                f"Could not open the PDF file:\n\n{e}\n\n"
+                f"Location: {self.pdf_path}"
+            )

@@ -1,14 +1,23 @@
 from PySide6.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QLabel, QPushButton,
     QDateEdit, QFrame, QTableWidget, QTableWidgetItem,
-    QHeaderView, QAbstractItemView, QTabWidget, QGraphicsDropShadowEffect
+    QHeaderView, QAbstractItemView, QTabWidget, QGraphicsDropShadowEffect,
+    QMenu, QMessageBox
 )
 from PySide6.QtCore import Qt, QDate
-from PySide6.QtGui import QColor
+from PySide6.QtGui import QColor, QAction
 
 from app.db.report_repo import (
     get_sales_summary, get_sales_in_range, get_daily_breakdown,
     get_top_products_in_range, get_phones_sold_in_range
+)
+from app.db.product_repo import get_products, get_all_categories
+from app.db.customer_repo import get_customers
+from app.db.phone_unit_repo import get_phone_units
+from app.db.payment_repo import get_all_debts, get_customer_debt
+from app.core.export_utils import (
+    export_sales, export_products, export_customers,
+    export_phone_units, export_debts, open_file
 )
 from app.locales.translations import t, currency
 
@@ -23,8 +32,9 @@ class ReportsPage(QWidget):
         layout.setContentsMargins(24, 24, 24, 24)
         layout.setSpacing(14)
 
-        # ========== Header ==========
+        # ========== Header with Export button ==========
         header = QHBoxLayout()
+
         title = QLabel(L("reports_title"))
         title.setStyleSheet("""
             font-size: 26px;
@@ -34,6 +44,35 @@ class ReportsPage(QWidget):
         """)
         header.addWidget(title)
         header.addStretch()
+
+        # Export button with dropdown
+        self.export_btn = QPushButton("📥  " + L("export"))
+        self.export_btn.setCursor(Qt.CursorShape.PointingHandCursor)
+        self.export_btn.setMinimumHeight(42)
+        self.export_btn.setStyleSheet("""
+            QPushButton {
+                background: qlineargradient(
+                    x1:0, y1:0, x2:1, y2:0,
+                    stop:0 #16a34a, stop:1 #22c55e
+                );
+                color: white;
+                border: none;
+                padding: 10px 20px;
+                border-radius: 8px;
+                font-weight: bold;
+                font-size: 13px;
+            }
+            QPushButton:hover {
+                background: qlineargradient(
+                    x1:0, y1:0, x2:1, y2:0,
+                    stop:0 #15803d, stop:1 #16a34a
+                );
+            }
+            QPushButton::menu-indicator { image: none; }
+        """)
+        self.export_btn.clicked.connect(self.show_export_menu)
+        header.addWidget(self.export_btn)
+
         layout.addLayout(header)
 
         # ========== Date range card ==========
@@ -106,7 +145,7 @@ class ReportsPage(QWidget):
         self.summary_layout.setSpacing(14)
         layout.addLayout(self.summary_layout)
 
-        # ========== Tabs (styled) ==========
+        # ========== Tabs ==========
         self.tabs = QTabWidget()
         self.tabs.setStyleSheet("""
             QTabWidget::pane {
@@ -318,7 +357,7 @@ class ReportsPage(QWidget):
         df = self.from_date.date().toString("yyyy-MM-dd")
         dt = self.to_date.date().toString("yyyy-MM-dd")
 
-        # ---------- Summary cards ----------
+        # Summary cards
         summary = get_sales_summary(df, dt)
         self._clear_layout(self.summary_layout)
 
@@ -387,7 +426,7 @@ class ReportsPage(QWidget):
 
             self.summary_layout.addWidget(card)
 
-        # ---------- Sales tab ----------
+        # Sales tab
         sales = get_sales_in_range(df, dt, limit=500)
         self.sales_table.setRowCount(len(sales))
         for row, s in enumerate(sales):
@@ -406,7 +445,7 @@ class ReportsPage(QWidget):
             p_item.setForeground(QColor("#16a34a"))
             self.sales_table.setItem(row, 4, p_item)
 
-        # ---------- Daily tab ----------
+        # Daily tab
         daily = get_daily_breakdown(df, dt)
         self.daily_table.setRowCount(len(daily))
         for row, d in enumerate(daily):
@@ -424,7 +463,7 @@ class ReportsPage(QWidget):
             c_item.setTextAlignment(Qt.AlignmentFlag.AlignCenter)
             self.daily_table.setItem(row, 3, c_item)
 
-        # ---------- Top products tab ----------
+        # Top products tab
         top = get_top_products_in_range(df, dt, limit=10)
         self.top_table.setRowCount(len(top))
         for row, p in enumerate(top):
@@ -443,7 +482,7 @@ class ReportsPage(QWidget):
             pf_item.setForeground(QColor("#16a34a"))
             self.top_table.setItem(row, 4, pf_item)
 
-        # ---------- Phones sold tab ----------
+        # Phones sold tab
         phones = get_phones_sold_in_range(df, dt)
         self.phones_table.setRowCount(len(phones))
         for row, p in enumerate(phones):
@@ -454,3 +493,143 @@ class ReportsPage(QWidget):
             self.phones_table.setItem(row, 2, QTableWidgetItem(f"{p['buying_price']:.2f}"))
             self.phones_table.setItem(row, 3, QTableWidgetItem(f"{p['selling_price']:.2f}"))
             self.phones_table.setItem(row, 4, QTableWidgetItem(str(p["sale_date"])))
+
+    # ---------- Export menu ----------
+
+    def show_export_menu(self):
+        L = lambda key: t(key, self.lang)
+        menu = QMenu(self)
+        menu.setStyleSheet("""
+            QMenu {
+                background-color: white;
+                border: 1px solid #e2e8f0;
+                border-radius: 8px;
+                padding: 6px;
+                font-size: 13px;
+            }
+            QMenu::item {
+                padding: 10px 20px;
+                border-radius: 6px;
+            }
+            QMenu::item:selected {
+                background-color: #eef2ff;
+                color: #4f46e5;
+            }
+        """)
+
+        # Sales
+        act_sales = menu.addAction("📊  " + L("tab_sales"))
+        act_sales.triggered.connect(self.export_sales_clicked)
+
+        # Products
+        act_products = menu.addAction("📦  " + L("products"))
+        act_products.triggered.connect(self.export_products_clicked)
+
+        # Customers
+        act_customers = menu.addAction("👥  " + L("customers_title"))
+        act_customers.triggered.connect(self.export_customers_clicked)
+
+        # Phone Units
+        act_phones = menu.addAction("📱  " + L("phone_units_title"))
+        act_phones.triggered.connect(self.export_phones_clicked)
+
+        # Debts
+        act_debts = menu.addAction("💵  " + L("customer_debts"))
+        act_debts.triggered.connect(self.export_debts_clicked)
+
+        # Show menu below the button
+        menu.exec(self.export_btn.mapToGlobal(self.export_btn.rect().bottomLeft()))
+
+    def export_sales_clicked(self):
+        L = lambda key: t(key, self.lang)
+        df = self.from_date.date().toString("yyyy-MM-dd")
+        dt = self.to_date.date().toString("yyyy-MM-dd")
+
+        sales = get_sales_in_range(df, dt, limit=10000)
+
+        # Add items for each sale
+        from app.db.sale_repo import get_sale_items
+        for s in sales:
+            items = get_sale_items(s["id"])
+            s["items"] = [
+                {
+                    "name": (it["product_name"] or f"IMEI: {it['phone_imei']}"),
+                    "qty": it["quantity"],
+                }
+                for it in items
+            ]
+
+        path = export_sales(sales)
+
+        # Ask to open
+        reply = QMessageBox.question(
+            self, L("export_done"),
+            L("export_done_msg").replace("{file}", path.name),
+            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No
+        )
+        if reply == QMessageBox.StandardButton.Yes:
+            open_file(path)
+
+    def export_products_clicked(self):
+        L = lambda key: t(key, self.lang)
+        products = get_products(limit=100000)
+        cats = {c.id: c.display_name(self.lang) for c in get_all_categories()}
+        path = export_products(products, cats)
+
+        reply = QMessageBox.question(
+            self, L("export_done"),
+            L("export_done_msg").replace("{file}", path.name),
+            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No
+        )
+        if reply == QMessageBox.StandardButton.Yes:
+            open_file(path)
+
+    def export_customers_clicked(self):
+        L = lambda key: t(key, self.lang)
+        customers = get_customers(limit=100000)
+        debts = {c.id: get_customer_debt(c.id) for c in customers}
+        path = export_customers(customers, debts)
+
+        reply = QMessageBox.question(
+            self, L("export_done"),
+            L("export_done_msg").replace("{file}", path.name),
+            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No
+        )
+        if reply == QMessageBox.StandardButton.Yes:
+            open_file(path)
+
+    def export_phones_clicked(self):
+        L = lambda key: t(key, self.lang)
+        units = get_phone_units(limit=100000)
+
+        # Add product name to each unit
+        all_products = {p.id: p for p in get_products(limit=100000)}
+        for u in units:
+            if u.product_id and u.product_id in all_products:
+                p = all_products[u.product_id]
+                u.product_name = p.name + (f" ({p.brand})" if p.brand else "")
+            else:
+                u.product_name = "—"
+
+        path = export_phone_units(units)
+
+        reply = QMessageBox.question(
+            self, L("export_done"),
+            L("export_done_msg").replace("{file}", path.name),
+            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No
+        )
+        if reply == QMessageBox.StandardButton.Yes:
+            open_file(path)
+
+    def export_debts_clicked(self):
+        L = lambda key: t(key, self.lang)
+        debts = get_all_debts()
+        path = export_debts(debts)
+
+        reply = QMessageBox.question(
+            self, L("export_done"),
+            L("export_done_msg").replace("{file}", path.name),
+            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No
+        )
+        if reply == QMessageBox.StandardButton.Yes:
+            open_file(path)

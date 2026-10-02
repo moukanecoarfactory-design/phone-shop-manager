@@ -49,6 +49,7 @@ class Customer:
     phone: str = ""
     address: str = ""
     notes: str = ""
+    debt: float = 0.0   # ← NEW: total amount owed
 
 
 @dataclass
@@ -74,3 +75,14 @@ class PhoneUnit:
     @property
     def profit(self) -> float:
         return self.selling_price - self.buying_price
+
+
+@dataclass
+class Payment:
+    """Payment made by a customer (partial or full)."""
+    id: Optional[int] = None
+    customer_id: Optional[int] = None
+    sale_id: Optional[int] = None
+    amount: float = 0.0
+    payment_date: str = ""
+    notes: str = ""

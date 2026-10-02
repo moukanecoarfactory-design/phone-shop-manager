@@ -1,0 +1,57 @@
+app\ui\change_password_dialog.py:    QPushButton, QFrame, QMessageBox
+app\ui\change_password_dialog.py:            QMessageBox.warning(self, "Missing Fields",
+app\ui\change_password_dialog.py:            QMessageBox.warning(self, "Too Short",
+app\ui\change_password_dialog.py:            QMessageBox.warning(self, "Mismatch",
+app\ui\change_password_dialog.py:            QMessageBox.critical(self, "Error", "User not identified.")
+app\ui\change_password_dialog.py:            QMessageBox.information(self, "Success",
+app\ui\change_password_dialog.py:            QMessageBox.warning(self, "Wrong Password",
+app\ui\customers_page.py:    QMessageBox, QHeaderView, QAbstractItemView, QFrame
+app\ui\customers_page.py:        confirm = QMessageBox.question(
+app\ui\customers_page.py:            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No
+app\ui\customers_page.py:        if confirm == QMessageBox.StandardButton.Yes:
+app\ui\customer_dialog.py:    QPushButton, QLabel, QMessageBox, QFrame,
+app\ui\customer_dialog.py:            QMessageBox.warning(self, t("missing_name", self.lang),
+app\ui\login_window.py:    QPushButton, QFrame, QMessageBox
+app\ui\login_window.py:            QMessageBox.warning(self, "Missing Fields",
+app\ui\login_window.py:            QMessageBox.warning(self, "Login Failed",
+app\ui\main_window.py:    QMessageBox
+app\ui\main_window.py:        confirm = QMessageBox.question(
+app\ui\main_window.py:            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No
+app\ui\main_window.py:        if confirm == QMessageBox.StandardButton.Yes:
+app\ui\new_sale_window.py:    QHeaderView, QAbstractItemView, QMessageBox, QFrame,
+app\ui\new_sale_window.py:            QMessageBox.critical(self, "Error",
+app\ui\phone_units_page.py:    QMessageBox, QHeaderView, QAbstractItemView, QFrame
+app\ui\phone_units_page.py:        confirm = QMessageBox.question(
+app\ui\phone_units_page.py:            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No
+app\ui\phone_units_page.py:        if confirm == QMessageBox.StandardButton.Yes:
+app\ui\phone_unit_dialog.py:    QVBoxLayout, QHBoxLayout, QPushButton, QLabel, QMessageBox,
+app\ui\products_page.py:    QMessageBox, QHeaderView, QAbstractItemView, QFrame
+app\ui\products_page.py:        confirm = QMessageBox.question(
+app\ui\products_page.py:            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No
+app\ui\products_page.py:        if confirm == QMessageBox.StandardButton.Yes:
+app\ui\product_dialog.py:    QLabel, QFileDialog, QMessageBox, QFrame, QWidget,
+app\ui\product_dialog.py:            QMessageBox.warning(self, "Error", f"Could not copy image:\n{e}")
+app\ui\product_dialog.py:            QMessageBox.warning(self, t("missing_name", self.lang),
+app\ui\receipt_dialog.py:    QFrame, QGraphicsDropShadowEffect, QMessageBox
+app\ui\receipt_dialog.py:        QMessageBox.information(
+app\ui\receipt_dialog.py:            QMessageBox.warning(
+app\ui\sales_page.py:    QMessageBox, QHeaderView, QAbstractItemView, QFrame
+app\ui\sales_page.py:        confirm = QMessageBox.question(
+app\ui\sales_page.py:            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No
+app\ui\sales_page.py:        if confirm == QMessageBox.StandardButton.Yes:
+app\ui\settings_page.py:    QComboBox, QPushButton, QFrame, QFormLayout, QMessageBox,
+app\ui\settings_page.py:            QMessageBox.information(
+app\ui\settings_page.py:            QMessageBox.critical(
+app\ui\suppliers_page.py:    QMessageBox, QHeaderView, QAbstractItemView, QFrame
+app\ui\suppliers_page.py:        confirm = QMessageBox.question(
+app\ui\suppliers_page.py:            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No
+app\ui\suppliers_page.py:        if confirm == QMessageBox.StandardButton.Yes:
+app\ui\supplier_dialog.py:    QPushButton, QLabel, QMessageBox, QFrame,
+app\ui\supplier_dialog.py:            QMessageBox.warning(self, t("missing_name", self.lang),
+app\ui\users_page.py:    QMessageBox, QHeaderView, QAbstractItemView, QDialog,
+app\ui\users_page.py:            QMessageBox.warning(self, "Missing Fields",
+app\ui\users_page.py:            QMessageBox.information(self, "No Selection",
+app\ui\users_page.py:            QMessageBox.warning(self, "Not Allowed",
+app\ui\users_page.py:        confirm = QMessageBox.question(
+app\ui\users_page.py:            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No
+app\ui\users_page.py:        if confirm == QMessageBox.StandardButton.Yes:

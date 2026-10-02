@@ -84,3 +84,12 @@ def get_top_selling_products(limit: int = 5) -> list:
     """, (limit,)).fetchall()
     conn.close()
     return [dict(r) for r in rows]
+
+
+def get_total_debts() -> float:
+    """Sum of all outstanding customer debts."""
+    from app.db.payment_repo import get_total_debts as _get_debts
+    try:
+        return _get_debts()
+    except Exception:
+        return 0.0

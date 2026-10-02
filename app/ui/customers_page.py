@@ -4,13 +4,16 @@ from PySide6.QtWidgets import (
     QMessageBox, QHeaderView, QAbstractItemView, QFrame
 )
 from PySide6.QtCore import Qt
+from PySide6.QtGui import QColor
 
 from app.db.customer_repo import (
     get_customers, count_customers, add_customer,
     update_customer, delete_customer, get_customer
 )
+from app.db.payment_repo import get_customer_debt
 from app.ui.customer_dialog import CustomerDialog
-from app.locales.translations import t
+from app.ui.pay_debt_dialog import PayDebtDialog
+from app.locales.translations import t, currency
 
 
 PAGE_SIZE = 50
@@ -73,9 +76,9 @@ class CustomersPage(QWidget):
         table_layout.setContentsMargins(0, 0, 0, 0)
 
         self.table = QTableWidget()
-        self.table.setColumnCount(5)
+        self.table.setColumnCount(6)
         self.table.setHorizontalHeaderLabels([
-            L("id"), L("name"), L("phone"), L("address"), L("notes")
+            L("id"), L("name"), L("phone"), L("address"), L("notes"), L("debt_col")
         ])
         self.table.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows)
         self.table.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
@@ -115,7 +118,7 @@ class CustomersPage(QWidget):
         hh.setSectionResizeMode(1, QHeaderView.ResizeMode.Stretch)
         hh.setSectionResizeMode(3, QHeaderView.ResizeMode.Stretch)
         hh.setSectionResizeMode(4, QHeaderView.ResizeMode.Stretch)
-        for col in [0, 2]:
+        for col in [0, 2, 5]:
             hh.setSectionResizeMode(col, QHeaderView.ResizeMode.ResizeToContents)
         self.table.verticalHeader().setDefaultSectionSize(44)
 
@@ -150,6 +153,14 @@ class CustomersPage(QWidget):
         bottom.addWidget(self.next_btn)
 
         bottom.addStretch()
+
+        # Pay Debt button (always visible when a customer has debt)
+        self.pay_debt_btn = QPushButton(L("pay_debt"))
+        self.pay_debt_btn.setMinimumHeight(40)
+        self.pay_debt_btn.setCursor(Qt.CursorShape.PointingHandCursor)
+        self.pay_debt_btn.setStyleSheet(self._success_btn_style())
+        self.pay_debt_btn.clicked.connect(self.on_pay_debt)
+        bottom.addWidget(self.pay_debt_btn)
 
         self.edit_btn = QPushButton("✏  " + L("edit_customer").lstrip("✏ "))
         self.edit_btn.setMinimumHeight(40)
@@ -209,6 +220,28 @@ class CustomersPage(QWidget):
             }
         """
 
+    def _success_btn_style(self) -> str:
+        return """
+            QPushButton {
+                background: qlineargradient(
+                    x1:0, y1:0, x2:1, y2:0,
+                    stop:0 #16a34a, stop:1 #22c55e
+                );
+                color: white;
+                border: none;
+                padding: 8px 18px;
+                border-radius: 8px;
+                font-weight: bold;
+                font-size: 13px;
+            }
+            QPushButton:hover {
+                background: qlineargradient(
+                    x1:0, y1:0, x2:1, y2:0,
+                    stop:0 #15803d, stop:1 #16a34a
+                );
+            }
+        """
+
     def _pagination_style(self) -> str:
         return """
             QPushButton {
@@ -255,6 +288,7 @@ class CustomersPage(QWidget):
 
     def refresh(self):
         L = lambda key: t(key, self.lang)
+        C = currency(self.lang)
         search = self.search_input.text().strip()
         self.total_count = count_customers(search)
         customers = get_customers(search, PAGE_SIZE, self.current_page * PAGE_SIZE)
@@ -269,6 +303,20 @@ class CustomersPage(QWidget):
             self.table.setItem(row, 2, QTableWidgetItem(c.phone))
             self.table.setItem(row, 3, QTableWidgetItem(c.address))
             self.table.setItem(row, 4, QTableWidgetItem(c.notes))
+
+            # Debt column
+            debt = get_customer_debt(c.id)
+            debt_item = QTableWidgetItem(f"{debt:.2f} {C}" if debt > 0.01 else "—")
+            debt_item.setTextAlignment(Qt.AlignmentFlag.AlignCenter)
+
+            if debt > 0.01:
+                debt_item.setForeground(QColor("#dc2626"))
+                debt_item.setBackground(QColor("#fef2f2"))
+            else:
+                debt_item.setForeground(QColor("#16a34a"))
+
+            self.table.setItem(row, 5, debt_item)
+
             self.table.item(row, 0).setData(Qt.ItemDataRole.UserRole, c.id)
 
         self._update_pagination_ui()
@@ -345,4 +393,34 @@ class CustomersPage(QWidget):
         )
         if confirm == QMessageBox.StandardButton.Yes:
             delete_customer(cid)
+            self.refresh()
+
+    def on_pay_debt(self):
+        L = lambda key: t(key, self.lang)
+        cid = self._selected_id()
+        if cid is None:
+            QMessageBox.information(self, L("no_selection"),
+                                    L("select_customer_first_debt"))
+            return
+
+        c = get_customer(cid)
+        if not c:
+            return
+
+        # Check if customer has debt
+        debt = get_customer_debt(cid)
+        if debt <= 0.01:
+            QMessageBox.information(self, L("not_allowed"),
+                                    L("no_debt_for_customer"))
+            return
+
+        # Build customer dict for the dialog
+        customer_dict = {
+            "id": c.id,
+            "name": c.name,
+            "phone": c.phone,
+        }
+
+        dlg = PayDebtDialog(self, customer=customer_dict, lang=self.lang)
+        if dlg.exec():
             self.refresh()

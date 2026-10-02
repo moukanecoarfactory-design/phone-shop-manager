@@ -404,8 +404,7 @@ class ProductDialog(QDialog):
             if src.resolve() != dest.resolve():
                 shutil.copy2(src, dest)
         except Exception as e:
-            QMessageBox.warning(self, L("error_title"),
-                                L("image_copy_failed") + f"\n{e}")
+            QMessageBox.warning(self, "Error", f"Could not copy image:\n{e}")
             return
 
         self.selected_image_path = str(dest)

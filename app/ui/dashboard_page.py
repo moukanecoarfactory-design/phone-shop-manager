@@ -8,7 +8,8 @@ from PySide6.QtGui import QColor
 
 from app.db.dashboard_repo import (
     get_today_sales_summary, get_month_sales_summary,
-    get_counts, get_low_stock_products, get_top_selling_products
+    get_counts, get_low_stock_products, get_top_selling_products,
+    get_total_debts
 )
 from app.locales.translations import t, currency
 
@@ -30,7 +31,6 @@ class StatCard(QFrame):
         """)
         self.setMinimumHeight(120)
 
-        # Drop shadow
         shadow = QGraphicsDropShadowEffect()
         shadow.setBlurRadius(20)
         shadow.setXOffset(0)
@@ -42,7 +42,6 @@ class StatCard(QFrame):
         layout.setContentsMargins(18, 16, 18, 16)
         layout.setSpacing(8)
 
-        # Top row: icon badge + title
         top_row = QHBoxLayout()
         top_row.setSpacing(10)
 
@@ -71,7 +70,6 @@ class StatCard(QFrame):
 
         layout.addLayout(top_row)
 
-        # Value
         value_lbl = QLabel(value)
         value_lbl.setStyleSheet(f"""
             color: {color};
@@ -81,7 +79,6 @@ class StatCard(QFrame):
         """)
         layout.addWidget(value_lbl)
 
-        # Subtitle
         if subtitle:
             sub_lbl = QLabel(subtitle)
             sub_lbl.setStyleSheet("""
@@ -122,7 +119,6 @@ def make_section_header(icon: str, text: str) -> QWidget:
     """)
     layout.addWidget(text_lbl)
 
-    # Divider line
     line = QFrame()
     line.setFrameShape(QFrame.Shape.HLine)
     line.setFixedHeight(1)
@@ -143,8 +139,9 @@ class DashboardPage(QWidget):
         outer.setContentsMargins(24, 24, 24, 24)
         outer.setSpacing(14)
 
-        # ========== Top header ==========
+        # Top header
         header = QHBoxLayout()
+
         title = QLabel(L("dashboard"))
         title.setStyleSheet("""
             font-size: 26px;
@@ -182,12 +179,10 @@ class DashboardPage(QWidget):
 
         outer.addLayout(header)
 
-        # ========== Scroll area ==========
+        # Scroll area
         scroll = QScrollArea()
         scroll.setWidgetResizable(True)
-        scroll.setStyleSheet("""
-            QScrollArea { border: none; background: transparent; }
-        """)
+        scroll.setStyleSheet("QScrollArea { border: none; background: transparent; }")
 
         self.content = QWidget()
         self.content.setStyleSheet("background: transparent;")
@@ -197,28 +192,24 @@ class DashboardPage(QWidget):
 
         # ---------- Today ----------
         self.content_layout.addWidget(make_section_header("📅", L("today")))
-
         self.today_grid = QGridLayout()
         self.today_grid.setSpacing(14)
         self.content_layout.addLayout(self.today_grid)
 
         # ---------- This Month ----------
         self.content_layout.addWidget(make_section_header("📆", L("this_month")))
-
         self.month_grid = QGridLayout()
         self.month_grid.setSpacing(14)
         self.content_layout.addLayout(self.month_grid)
 
         # ---------- Inventory ----------
         self.content_layout.addWidget(make_section_header("📦", L("inventory")))
-
         self.inv_grid = QGridLayout()
         self.inv_grid.setSpacing(14)
         self.content_layout.addLayout(self.inv_grid)
 
         # ---------- Top Selling ----------
         self.content_layout.addWidget(make_section_header("🔥", L("top_selling")))
-
         self.top_table = QTableWidget()
         self.top_table.setColumnCount(3)
         self.top_table.setHorizontalHeaderLabels([
@@ -232,7 +223,6 @@ class DashboardPage(QWidget):
         self.content_layout.addWidget(
             make_section_header("⚠️", L("low_stock_alerts"))
         )
-
         self.low_table = QTableWidget()
         self.low_table.setColumnCount(4)
         self.low_table.setHorizontalHeaderLabels([
@@ -329,7 +319,9 @@ class DashboardPage(QWidget):
 
         # ---------- Inventory ----------
         counts = get_counts()
+        total_debts = get_total_debts()
         self._clear_layout(self.inv_grid)
+
         self.inv_grid.addWidget(StatCard(
             "📦", L("products_count"),
             str(counts["products"]), "#6366f1",
@@ -353,6 +345,14 @@ class DashboardPage(QWidget):
             str(counts["low_stock"]), "#ef4444",
             L("need_restocking")
         ), 0, 4)
+
+        # Debts card
+        debts_color = "#dc2626" if total_debts > 0.01 else "#16a34a"
+        self.inv_grid.addWidget(StatCard(
+            "💰", L("total_debts"),
+            f"{total_debts:.2f} {C}", debts_color,
+            L("no_debts") if total_debts <= 0.01 else L("customer_debts")
+        ), 1, 0)
 
         # ---------- Top Selling ----------
         top = get_top_selling_products(5)

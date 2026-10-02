@@ -5,7 +5,7 @@ from pathlib import Path
 from PySide6.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QLabel, QLineEdit,
     QComboBox, QPushButton, QFrame, QFormLayout, QMessageBox,
-    QGraphicsDropShadowEffect
+    QGraphicsDropShadowEffect, QScrollArea
 )
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QColor
@@ -22,13 +22,17 @@ class SettingsPage(QWidget):
         self.lang = lang
         L = lambda key: t(key, self.lang)
 
-        # Outer layout with scroll-friendly margins
-        layout = QVBoxLayout(self)
-        layout.setContentsMargins(24, 24, 24, 24)
-        layout.setSpacing(16)
+        # Outer layout
+        outer = QVBoxLayout(self)
+        outer.setContentsMargins(0, 0, 0, 0)
+        outer.setSpacing(0)
 
-        # ========== Header ==========
-        header = QHBoxLayout()
+        # Header
+        header_widget = QWidget()
+        header_widget.setStyleSheet("background: transparent;")
+        header_layout = QHBoxLayout(header_widget)
+        header_layout.setContentsMargins(24, 20, 24, 8)
+
         title = QLabel(L("settings_title"))
         title.setStyleSheet("""
             font-size: 26px;
@@ -36,36 +40,76 @@ class SettingsPage(QWidget):
             color: #0f172a;
             background: transparent;
         """)
-        header.addWidget(title)
-        header.addStretch()
-        layout.addLayout(header)
+        header_layout.addWidget(title)
+        header_layout.addStretch()
+        outer.addWidget(header_widget)
+
+        # Scroll area
+        scroll = QScrollArea()
+        scroll.setWidgetResizable(True)
+        scroll.setStyleSheet("QScrollArea { border: none; background: transparent; }")
+
+        content = QWidget()
+        content.setStyleSheet("background: transparent;")
+        layout = QVBoxLayout(content)
+        layout.setContentsMargins(24, 8, 24, 24)
+        layout.setSpacing(16)
 
         # ========== General card ==========
         general_card = self._make_card()
-
         gen_layout = QVBoxLayout(general_card)
         gen_layout.setContentsMargins(22, 18, 22, 20)
-        gen_layout.setSpacing(10)
+        gen_layout.setSpacing(12)
 
-        gen_header = self._card_header("⚙️", L("general_settings"))
-        gen_layout.addWidget(gen_header)
+        gen_layout.addWidget(self._card_header("⚙️", L("general_settings")))
 
         gen_form = QFormLayout()
-        gen_form.setSpacing(14)
-        gen_form.setLabelAlignment(Qt.AlignmentFlag.AlignRight)
+        gen_form.setSpacing(10)
+        gen_form.setLabelAlignment(Qt.AlignmentFlag.AlignLeft)
+        gen_form.setFormAlignment(Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignTop)
 
         self.shop_name_input = QLineEdit()
-        self.shop_name_input.setMinimumHeight(40)
+        self.shop_name_input.setMinimumHeight(38)
         self.shop_name_input.setStyleSheet(self._input_style())
         gen_form.addRow(self._label(L("shop_name")), self.shop_name_input)
 
         self.currency_input = QLineEdit()
-        self.currency_input.setMinimumHeight(40)
+        self.currency_input.setMinimumHeight(38)
         self.currency_input.setStyleSheet(self._input_style())
         gen_form.addRow(self._label(L("currency")), self.currency_input)
 
+        self.address_input = QLineEdit()
+        self.address_input.setMinimumHeight(38)
+        self.address_input.setStyleSheet(self._input_style())
+        self.address_input.setPlaceholderText("Youssoufia Ouest 13 N°3")
+        gen_form.addRow(self._label("Address"), self.address_input)
+
+        self.city_input = QLineEdit()
+        self.city_input.setMinimumHeight(38)
+        self.city_input.setStyleSheet(self._input_style())
+        self.city_input.setPlaceholderText("Rabat, Morocco")
+        gen_form.addRow(self._label("City"), self.city_input)
+
+        self.phone_input = QLineEdit()
+        self.phone_input.setMinimumHeight(38)
+        self.phone_input.setStyleSheet(self._input_style())
+        self.phone_input.setPlaceholderText("+212 672 048 326")
+        gen_form.addRow(self._label("Phone"), self.phone_input)
+
+        self.email_input = QLineEdit()
+        self.email_input.setMinimumHeight(38)
+        self.email_input.setStyleSheet(self._input_style())
+        self.email_input.setPlaceholderText("(optional)")
+        gen_form.addRow(self._label("Email"), self.email_input)
+
+        self.website_input = QLineEdit()
+        self.website_input.setMinimumHeight(38)
+        self.website_input.setStyleSheet(self._input_style())
+        self.website_input.setPlaceholderText("(optional)")
+        gen_form.addRow(self._label("Website"), self.website_input)
+
         self.language_combo = QComboBox()
-        self.language_combo.setMinimumHeight(40)
+        self.language_combo.setMinimumHeight(38)
         self.language_combo.setStyleSheet(self._input_style())
         self.language_combo.addItem("🇬🇧  English", "en")
         self.language_combo.addItem("🇫🇷  Français", "fr")
@@ -73,7 +117,7 @@ class SettingsPage(QWidget):
         gen_form.addRow(self._label(L("language")), self.language_combo)
 
         gen_layout.addLayout(gen_form)
-        gen_layout.addSpacing(10)
+        gen_layout.addSpacing(6)
 
         save_row = QHBoxLayout()
         save_row.addStretch()
@@ -93,8 +137,7 @@ class SettingsPage(QWidget):
         bk_layout.setContentsMargins(22, 18, 22, 20)
         bk_layout.setSpacing(12)
 
-        bk_header = self._card_header("📁", L("backup_settings"))
-        bk_layout.addWidget(bk_header)
+        bk_layout.addWidget(self._card_header("📁", L("backup_settings")))
 
         backup_info = QLabel(L("backup_hint"))
         backup_info.setWordWrap(True)
@@ -123,8 +166,7 @@ class SettingsPage(QWidget):
         ab_layout.setContentsMargins(22, 18, 22, 20)
         ab_layout.setSpacing(10)
 
-        ab_header = self._card_header("ℹ️", L("about_settings"))
-        ab_layout.addWidget(ab_header)
+        ab_layout.addWidget(self._card_header("ℹ️", L("about_settings")))
 
         about_text = QLabel(L("about_app_text"))
         about_text.setWordWrap(True)
@@ -132,13 +174,14 @@ class SettingsPage(QWidget):
             color: #475569;
             font-size: 13px;
             background: transparent;
-            line-height: 1.5;
         """)
         ab_layout.addWidget(about_text)
 
         layout.addWidget(about_card)
-
         layout.addStretch()
+
+        scroll.setWidget(content)
+        outer.addWidget(scroll, 1)
 
         self.load_settings()
 
@@ -197,6 +240,7 @@ class SettingsPage(QWidget):
             font-weight: bold;
             background: transparent;
         """)
+        lbl.setMinimumWidth(80)
         return lbl
 
     def _input_style(self) -> str:
@@ -206,7 +250,7 @@ class SettingsPage(QWidget):
                 color: #0f172a;
                 border: 1px solid #e2e8f0;
                 border-radius: 8px;
-                padding: 8px 14px;
+                padding: 6px 12px;
                 font-size: 13px;
             }
             QLineEdit:hover, QComboBox:hover { border: 1px solid #cbd5e1; }
@@ -262,6 +306,11 @@ class SettingsPage(QWidget):
     def load_settings(self):
         self.shop_name_input.setText(get_setting("shop_name", "My Phone Shop"))
         self.currency_input.setText(get_setting("currency", "MAD"))
+        self.address_input.setText(get_setting("shop_address", ""))
+        self.city_input.setText(get_setting("shop_city", ""))
+        self.phone_input.setText(get_setting("shop_phone", ""))
+        self.email_input.setText(get_setting("shop_email", ""))
+        self.website_input.setText(get_setting("shop_website", ""))
 
         current_lang = get_current_language()
         idx = self.language_combo.findData(current_lang)
@@ -277,6 +326,11 @@ class SettingsPage(QWidget):
         set_setting("shop_name", shop_name)
         set_setting("currency", currency)
         set_setting("language", language)
+        set_setting("shop_address", self.address_input.text().strip())
+        set_setting("shop_city", self.city_input.text().strip())
+        set_setting("shop_phone", self.phone_input.text().strip())
+        set_setting("shop_email", self.email_input.text().strip())
+        set_setting("shop_website", self.website_input.text().strip())
 
         QMessageBox.information(self, L("settings_saved_title"),
                                 L("settings_saved_msg"))
