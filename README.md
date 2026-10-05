@@ -1,44 +1,63 @@
-# 📱 Phone Shop Manager
+# 📱 MK-PHONE-ACCESSORIES
 
 A modern, professional desktop application for managing a phone shop.
 
-![Login Screen](screenshots/01_login.png)
+![Login Screen](screenshots/login.png)
 
 ## ✨ Features
 
-- 🔐 **Secure Login** with role-based access (Admin / Cashier)
-- 📦 **Products Management** with images, categories, and stock alerts
-- 📱 **Phone Units Tracking** with IMEI
-- 👥 **Customers & Suppliers** management
-- 💰 **Sales System** with cart (products + phone units)
-- 📊 **Dashboard** with real-time statistics
+### 🏪 Shop Management
+- 📦 **Products** with images, categories, and capacity (64GB, 20000mAh...)
+- 📱 **Phone Units** with unique IMEI tracking
+- 👥 **Customers** & **Suppliers** management
+- 📋 **34 product categories** (HDD, SSD, USB, SD Card, Power Bank, Gaming...)
+
+### 💰 Sales & Debts
+- 🛒 **Sales system** with cart (products + phones)
+- 💳 **Customer debts tracking** with partial payments
+- 📜 **Payment history** per customer
+- 🧾 **PDF receipts** — auto-generated after each sale + reprint from history
+
+### 📊 Analytics
+- 🏠 **Dashboard** with daily/monthly stats
 - 📈 **Reports** with date range filters
-- 🌍 **Multi-language** (English / Français / العربية)
-- 💰 **Multi-currency** (MAD / DH / درهم)
-- 💾 **Database Backup** system
+- 📥 **Export to Excel/CSV** — sales, products, customers, debts
+
+### 🌍 Multi-language & Roles
+- 🌍 **3 languages** — English / Français / العربية
+- 💰 **Multi-currency** — MAD / DH / درهم
+- 🔐 **Role-based access** — Admin / Cashier
+- 🔑 **Change password** dialog
 
 ## 📸 Screenshots
 
 ### 🏠 Dashboard
-![Dashboard](screenshots/02_dashboard.png)
+![Dashboard](screenshots/Dashboard.png)
 
 ### 📦 Products Management
-![Products](screenshots/03_products.png)
+![Products](screenshots/Products.png)
+
+### 📱 Phone Units (IMEI)
+![Phone Units](screenshots/Phone%20Units%20(IMEI).png)
+
+### 👥 Customers & Suppliers
+![Suppliers](screenshots/Suppliers.png)
 
 ### 💰 Sales System
-![New Sale](screenshots/04_new_sale.png)
+![Sales](screenshots/Sales.png)
 
-### 📊 Reports
-![Reports](screenshots/05_reports.png)
+### 💳 Customer Debts Tracking
+![Customer Debts](screenshots/Customer%20Debts.png)
 
-### ⚙️ Settings
-![Settings](screenshots/06_settings.png)
+### 📊 Reports & Export
+![Reports](screenshots/Reports.png)
 
 ## 🛠️ Tech Stack
 
 - **Python 3.14**
 - **PySide6** (Qt for Python)
 - **SQLite** (local database)
+- **fpdf2** (PDF receipts)
 - **PyInstaller** (packaging)
 
 ## 🚀 Installation
