@@ -81,19 +81,19 @@ class SettingsPage(QWidget):
         self.address_input = QLineEdit()
         self.address_input.setMinimumHeight(38)
         self.address_input.setStyleSheet(self._input_style())
-        self.address_input.setPlaceholderText("Youssoufia Ouest 13 N°3")
+        self.address_input.setPlaceholderText("")
         gen_form.addRow(self._label(L("address_label")), self.address_input)
 
         self.city_input = QLineEdit()
         self.city_input.setMinimumHeight(38)
         self.city_input.setStyleSheet(self._input_style())
-        self.city_input.setPlaceholderText("Rabat, Morocco")
+        self.city_input.setPlaceholderText("")
         gen_form.addRow(self._label(L("city_label")), self.city_input)
 
         self.phone_input = QLineEdit()
         self.phone_input.setMinimumHeight(38)
         self.phone_input.setStyleSheet(self._input_style())
-        self.phone_input.setPlaceholderText("+212 672 048 326")
+        self.phone_input.setPlaceholderText("")
         gen_form.addRow(self._label(L("phone_label")), self.phone_input)
 
         self.email_input = QLineEdit()
