@@ -308,7 +308,7 @@ class UsersPage(QWidget):
         self.table.setColumnCount(5)
         self.table.setColumnHidden(0, True)
         self.table.setHorizontalHeaderLabels([
-            "ID", L("username"), L("full_name"), L("role"), "Created"
+            "ID", L("username"), L("full_name"), L("role"), L("created_col")
         ])
         self.table.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows)
         self.table.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)

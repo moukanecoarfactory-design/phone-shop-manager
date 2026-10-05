@@ -18,7 +18,7 @@ class ChangePasswordDialog(QDialog):
         L = lambda key: t(key, self.lang)
 
         self.setWindowTitle(L("change_password_title"))
-        self.setFixedSize(440, 480)
+        self.setFixedSize(440, 540)
         self.setStyleSheet("""
             QDialog {
                 background: qlineargradient(
@@ -40,27 +40,28 @@ class ChangePasswordDialog(QDialog):
             }
         """)
         card_layout = QVBoxLayout(card)
-        card_layout.setContentsMargins(30, 30, 30, 30)
+        card_layout.setContentsMargins(30, 20, 30, 30)
         card_layout.setSpacing(8)
 
         # Icon
-        icon = QLabel("🔐")
-        icon.setStyleSheet("""
-            font-size: 42px;
-            background-color: #eef2ff;
-            border-radius: 32px;
-            padding: 12px;
-        """)
-        icon.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        icon.setFixedSize(70, 70)
-
         icon_row = QHBoxLayout()
         icon_row.addStretch()
+
+        icon = QLabel("🔐")
+        icon.setStyleSheet("""
+            font-size: 44px;
+            background-color: #eef2ff;
+            border-radius: 40px;
+            padding: 8px;
+        """)
+        icon.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        icon.setFixedSize(80, 80)
         icon_row.addWidget(icon)
+
         icon_row.addStretch()
         card_layout.addLayout(icon_row)
 
-        card_layout.addSpacing(20)
+        card_layout.addSpacing(15)
 
         # Title
         title = QLabel(L("change_password_title"))
@@ -75,7 +76,11 @@ class ChangePasswordDialog(QDialog):
 
         # Subtitle
         username = self.user.get("username", "")
-        subtitle = QLabel(f"for @{username}" if username else "")
+        if username:
+            subtitle_text = L("for_user").replace("{user}", username)
+        else:
+            subtitle_text = ""
+        subtitle = QLabel(subtitle_text)
         subtitle.setAlignment(Qt.AlignmentFlag.AlignCenter)
         subtitle.setStyleSheet("""
             color: #64748b;
@@ -99,14 +104,14 @@ class ChangePasswordDialog(QDialog):
         self.current_input = QLineEdit()
         self.current_input.setEchoMode(QLineEdit.EchoMode.Password)
         self.current_input.setPlaceholderText(L("enter_password"))
-        self.current_input.setMinimumHeight(42)
+        self.current_input.setMinimumHeight(38)
         self.current_input.setStyleSheet(self._input_style())
         card_layout.addWidget(self.current_input)
 
         card_layout.addSpacing(6)
 
         # New password
-        new_lbl = QLabel("New " + L("password_label"))
+        new_lbl = QLabel(L("new_password_label"))
         new_lbl.setStyleSheet("""
             color: #334155;
             font-size: 12px;
@@ -117,8 +122,8 @@ class ChangePasswordDialog(QDialog):
 
         self.new_input = QLineEdit()
         self.new_input.setEchoMode(QLineEdit.EchoMode.Password)
-        self.new_input.setPlaceholderText("(min 4)")
-        self.new_input.setMinimumHeight(42)
+        self.new_input.setPlaceholderText(L("min_4_chars"))
+        self.new_input.setMinimumHeight(38)
         self.new_input.setStyleSheet(self._input_style())
         card_layout.addWidget(self.new_input)
 
@@ -137,7 +142,7 @@ class ChangePasswordDialog(QDialog):
         self.confirm_input = QLineEdit()
         self.confirm_input.setEchoMode(QLineEdit.EchoMode.Password)
         self.confirm_input.setPlaceholderText(L("enter_password"))
-        self.confirm_input.setMinimumHeight(42)
+        self.confirm_input.setMinimumHeight(38)
         self.confirm_input.setStyleSheet(self._input_style())
         self.confirm_input.returnPressed.connect(self.on_save)
         card_layout.addWidget(self.confirm_input)
@@ -149,7 +154,7 @@ class ChangePasswordDialog(QDialog):
         btn_row.setSpacing(10)
 
         cancel_btn = QPushButton(L("cancel"))
-        cancel_btn.setMinimumHeight(44)
+        cancel_btn.setMinimumHeight(42)
         cancel_btn.setCursor(Qt.CursorShape.PointingHandCursor)
         cancel_btn.setStyleSheet("""
             QPushButton {
@@ -166,7 +171,7 @@ class ChangePasswordDialog(QDialog):
         btn_row.addWidget(cancel_btn)
 
         save_btn = QPushButton("✓ " + L("save"))
-        save_btn.setMinimumHeight(44)
+        save_btn.setMinimumHeight(42)
         save_btn.setCursor(Qt.CursorShape.PointingHandCursor)
         save_btn.setStyleSheet("""
             QPushButton {
@@ -201,7 +206,7 @@ class ChangePasswordDialog(QDialog):
                 color: #0f172a;
                 border: 2px solid #e2e8f0;
                 border-radius: 10px;
-                padding: 10px 14px;
+                padding: 8px 14px;
                 font-size: 14px;
             }
             QLineEdit:focus {

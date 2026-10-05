@@ -162,7 +162,7 @@ class ProductDialog(QDialog):
         self.capacity_input.setPlaceholderText("e.g. 64GB, 20000mAh")
         self.capacity_input.setMinimumHeight(40)
         self.capacity_input.setStyleSheet(self._input_style())
-        form.addRow(self._label("Capacity"), self.capacity_input)
+        form.addRow(self._label(L("capacity")), self.capacity_input)
         form.addRow(self._label(L("brand")), self.brand_input)
 
         # --- Price row (side by side) ---

@@ -188,7 +188,7 @@ class MainWindow(QMainWindow):
         """)
         user_layout.addWidget(self.user_name_label)
 
-        role_text = "👑 Admin" if self.is_admin else "👤 Cashier"
+        role_text = L("admin_role_badge") if self.is_admin else L("cashier_role_badge")
         self.user_role_label = QLabel(f"@{self.user.get('username', 'user')}  ·  {role_text}")
         self.user_role_label.setStyleSheet("""
             color: #94a3b8;

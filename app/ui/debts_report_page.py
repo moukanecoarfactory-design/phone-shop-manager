@@ -4,7 +4,7 @@ Customer Debts Report — shows all customers who owe money.
 from PySide6.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QLabel, QPushButton,
     QTableWidget, QTableWidgetItem, QHeaderView,
-    QAbstractItemView, QFrame, QGraphicsDropShadowEffect
+    QAbstractItemView, QFrame, QGraphicsDropShadowEffect, QMessageBox
 )
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QColor
@@ -18,7 +18,6 @@ class DebtsReportPage(QWidget):
     def __init__(self, lang: str = "en"):
         super().__init__()
         self.lang = lang
-
         L = lambda key: t(key, self.lang)
 
         layout = QVBoxLayout(self)
@@ -27,7 +26,6 @@ class DebtsReportPage(QWidget):
 
         # Header
         header = QHBoxLayout()
-
         title = QLabel(L("customer_debts"))
         title.setStyleSheet("""
             font-size: 26px;
@@ -40,6 +38,7 @@ class DebtsReportPage(QWidget):
 
         self.refresh_btn = QPushButton(L("refresh"))
         self.refresh_btn.setCursor(Qt.CursorShape.PointingHandCursor)
+        self.refresh_btn.setMinimumHeight(40)
         self.refresh_btn.setStyleSheet("""
             QPushButton {
                 background: qlineargradient(
@@ -65,24 +64,26 @@ class DebtsReportPage(QWidget):
 
         layout.addLayout(header)
 
-        # Summary card
-        self.summary_card = QFrame()
-        self.summary_card.setStyleSheet("""
+        # Summary card (compact)
+        summary_card = QFrame()
+        summary_card.setStyleSheet("""
             QFrame {
                 background-color: #fef3c7;
                 border: 2px solid #fcd34d;
                 border-radius: 12px;
             }
         """)
+        summary_card.setFixedHeight(110)
+
         shadow = QGraphicsDropShadowEffect()
         shadow.setBlurRadius(20)
         shadow.setXOffset(0)
         shadow.setYOffset(2)
         shadow.setColor(QColor(0, 0, 0, 25))
-        self.summary_card.setGraphicsEffect(shadow)
+        summary_card.setGraphicsEffect(shadow)
 
-        summary_layout = QHBoxLayout(self.summary_card)
-        summary_layout.setContentsMargins(24, 16, 24, 16)
+        summary_layout = QHBoxLayout(summary_card)
+        summary_layout.setContentsMargins(24, 14, 24, 14)
         summary_layout.setSpacing(14)
 
         icon_badge = QLabel("💰")
@@ -128,24 +129,37 @@ class DebtsReportPage(QWidget):
         """)
         summary_layout.addWidget(self.count_lbl)
 
-        layout.addWidget(self.summary_card)
+        layout.addWidget(summary_card)
+
+        # Empty state label
+        self.empty_label = QLabel(L("no_debts"))
+        self.empty_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.empty_label.setStyleSheet("""
+            color: #94a3b8;
+            font-size: 16px;
+            font-weight: bold;
+            padding: 60px 20px;
+            background: transparent;
+        """)
+        layout.addWidget(self.empty_label)
 
         # Table card
-        table_card = QFrame()
-        table_card.setStyleSheet("""
+        self.table_card = QFrame()
+        self.table_card.setStyleSheet("""
             QFrame {
                 background-color: white;
                 border-radius: 12px;
                 border: 1px solid #e2e8f0;
             }
         """)
-        table_layout = QVBoxLayout(table_card)
+        table_layout = QVBoxLayout(self.table_card)
         table_layout.setContentsMargins(0, 0, 0, 0)
 
         self.table = QTableWidget()
         self.table.setColumnCount(5)
         self.table.setHorizontalHeaderLabels([
-            L("name"), L("phone"), "Total Sales", L("paid_label"), L("debt_col")
+            L("name"), L("phone"), L("total_sales_col"),
+            L("paid_label"), L("debt_col")
         ])
         self.table.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows)
         self.table.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
@@ -182,14 +196,12 @@ class DebtsReportPage(QWidget):
 
         hh = self.table.horizontalHeader()
         hh.setSectionResizeMode(0, QHeaderView.ResizeMode.Stretch)
-        hh.setSectionResizeMode(1, QHeaderView.ResizeMode.ResizeToContents)
-        hh.setSectionResizeMode(2, QHeaderView.ResizeMode.ResizeToContents)
-        hh.setSectionResizeMode(3, QHeaderView.ResizeMode.ResizeToContents)
-        hh.setSectionResizeMode(4, QHeaderView.ResizeMode.ResizeToContents)
+        for col in [1, 2, 3, 4]:
+            hh.setSectionResizeMode(col, QHeaderView.ResizeMode.ResizeToContents)
         self.table.verticalHeader().setDefaultSectionSize(46)
 
         table_layout.addWidget(self.table)
-        layout.addWidget(table_card, 1)
+        layout.addWidget(self.table_card, 1)
 
         # Bottom
         bottom = QHBoxLayout()
@@ -235,28 +247,36 @@ class DebtsReportPage(QWidget):
         self.total_debts_lbl.setText(f"{total:.2f} {C}")
         self.count_lbl.setText(f"{len(debts)} {L('customers_label')}")
 
-        self.table.setRowCount(len(debts))
-        for row, d in enumerate(debts):
-            name_item = QTableWidgetItem(d["name"])
-            name_item.setData(Qt.ItemDataRole.UserRole, d["customer_id"])
-            self.table.setItem(row, 0, name_item)
+        # Show table or empty state
+        if len(debts) == 0:
+            self.table_card.setVisible(False)
+            self.empty_label.setVisible(True)
+        else:
+            self.table_card.setVisible(True)
+            self.empty_label.setVisible(False)
 
-            self.table.setItem(row, 1, QTableWidgetItem(d["phone"]))
+            self.table.setRowCount(len(debts))
+            for row, d in enumerate(debts):
+                name_item = QTableWidgetItem(d["name"])
+                name_item.setData(Qt.ItemDataRole.UserRole, d["customer_id"])
+                self.table.setItem(row, 0, name_item)
 
-            sales_item = QTableWidgetItem(f"{d['total_sales']:.2f} {C}")
-            sales_item.setTextAlignment(Qt.AlignmentFlag.AlignCenter)
-            self.table.setItem(row, 2, sales_item)
+                self.table.setItem(row, 1, QTableWidgetItem(d["phone"]))
 
-            paid_item = QTableWidgetItem(f"{d['total_paid']:.2f} {C}")
-            paid_item.setForeground(QColor("#16a34a"))
-            paid_item.setTextAlignment(Qt.AlignmentFlag.AlignCenter)
-            self.table.setItem(row, 3, paid_item)
+                sales_item = QTableWidgetItem(f"{d['total_sales']:.2f} {C}")
+                sales_item.setTextAlignment(Qt.AlignmentFlag.AlignCenter)
+                self.table.setItem(row, 2, sales_item)
 
-            debt_item = QTableWidgetItem(f"{d['debt']:.2f} {C}")
-            debt_item.setForeground(QColor("#dc2626"))
-            debt_item.setBackground(QColor("#fef2f2"))
-            debt_item.setTextAlignment(Qt.AlignmentFlag.AlignCenter)
-            self.table.setItem(row, 4, debt_item)
+                paid_item = QTableWidgetItem(f"{d['total_paid']:.2f} {C}")
+                paid_item.setForeground(QColor("#16a34a"))
+                paid_item.setTextAlignment(Qt.AlignmentFlag.AlignCenter)
+                self.table.setItem(row, 3, paid_item)
+
+                debt_item = QTableWidgetItem(f"{d['debt']:.2f} {C}")
+                debt_item.setForeground(QColor("#dc2626"))
+                debt_item.setBackground(QColor("#fef2f2"))
+                debt_item.setTextAlignment(Qt.AlignmentFlag.AlignCenter)
+                self.table.setItem(row, 4, debt_item)
 
     def _selected_customer_id(self):
         rows = self.table.selectionModel().selectedRows()
@@ -268,12 +288,10 @@ class DebtsReportPage(QWidget):
         L = lambda key: t(key, self.lang)
         cid = self._selected_customer_id()
         if cid is None:
-            from PySide6.QtWidgets import QMessageBox
             QMessageBox.information(self, L("no_selection"),
                                     L("select_customer_first_debt"))
             return
 
-        # Get customer info from the table
         rows = self.table.selectionModel().selectedRows()
         row = rows[0].row()
         name = self.table.item(row, 0).text()

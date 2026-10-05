@@ -113,7 +113,7 @@ class ProductsPage(QWidget):
         self.table = QTableWidget()
         self.table.setColumnCount(10)
         self.table.setHorizontalHeaderLabels([
-            L("image"), L("id"), L("name"), L("category"), L("brand"), "Capacity",
+            L("image"), L("id"), L("name"), L("category"), L("brand"), L("capacity"),
             L("buy_price"), L("sell_price"), L("qty"), L("profit")
         ])
         self.table.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows)

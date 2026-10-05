@@ -191,7 +191,7 @@ class DashboardPage(QWidget):
         self.content_layout.setSpacing(12)
 
         # ---------- Today ----------
-        self.content_layout.addWidget(make_section_header("📅", L("today")))
+        self.content_layout.addWidget(make_section_header("📅", L("today_section")))
         self.today_grid = QGridLayout()
         self.today_grid.setSpacing(14)
         self.content_layout.addLayout(self.today_grid)
